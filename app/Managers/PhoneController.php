@@ -478,32 +478,25 @@ class PhoneController extends Manager
 
     private function setPairMiracle($pairUnique): void
     {
+        if (empty($pairUnique)) {
+            return;
+        }
 
+        $placeholders = implode(',', array_fill(0, count($pairUnique), '?'));
 
-        $sql = "SELECT * FROM numbers ORDER BY pairnumberid ASC";
+        // ⚡ Bolt: Optimized database query to fetch only necessary data.
+        // This avoids loading the entire 'numbers' table into memory and looping over it.
+        $sql = "SELECT * FROM numbers WHERE pairnumber IN ($placeholders) ORDER BY pairnumberid ASC";
         $result = $this->db->prepare($sql);
-        $result->execute();
+        $result->execute(array_values($pairUnique));
         $data = $result->fetchAll(\PDO::FETCH_OBJ);
 
         foreach ($data as $value) {
-            foreach ($pairUnique as $pair) {
-
-                if ($value->pairnumber === $pair) {
-                    array_push($this->pairMiracle,
-                        array("pairnumber" => $pair, "pairtype" => $value->pairtype,
-                            "pairpoint" => $value->pairpoint, "miracledesc" => $value->miracledesc,
-                            "miracledetail" => $value->miracledetail));
-
-                    break;
-                }
-
-
-            }
-
-
+            array_push($this->pairMiracle,
+                array("pairnumber" => $value->pairnumber, "pairtype" => $value->pairtype,
+                    "pairpoint" => $value->pairpoint, "miracledesc" => $value->miracledesc,
+                    "miracledetail" => $value->miracledetail));
         }
-
-
     }
 
     private function setPairsUnique(array $pairsPhoneA, array $pairsPhoneB, string $pairSum)
