@@ -262,11 +262,17 @@
                     e.preventDefault();
                     // Basic validation
                     const input = document.getElementById('identity');
-                    if (input.value.trim() === '') return false;
+                    if (input.value.trim() === '') {
+                        alert('Please enter your Username or Email.');
+                        return false;
+                    }
 
-                    // UI Transition
-                    document.getElementById('delete-form').style.display = 'none';
-                    document.getElementById('success-msg').style.display = 'block';
+                    // Confirmation dialog
+                    if (confirm('Are you sure you want to request account deletion? This action cannot be undone.')) {
+                        // UI Transition
+                        document.getElementById('delete-form').style.display = 'none';
+                        document.getElementById('success-msg').style.display = 'block';
+                    }
                     return false;
                 }
             </script>
