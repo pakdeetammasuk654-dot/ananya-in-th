@@ -1,0 +1,3 @@
+## 2024-01-17 - Consistent Form UX
+**Learning:** The application's main view (`views/index.phtml`) contains multiple forms that were built with inconsistent UX patterns. Some had basic `alert()` validation, while others had none. Implementing a single, consistent UX pattern (disabling buttons on empty inputs and showing a loading state) across all forms is a high-impact, low-effort win.
+**Action:** When working on UI elements in this repository, always check for similar elements on the same page or in other views to ensure that any improvements are applied consistently. Create reusable JavaScript helper functions to enforce this consistency.
