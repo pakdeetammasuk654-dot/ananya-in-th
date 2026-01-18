@@ -1,168 +1,184 @@
-
+import re
 import sys
 
-data = """
-7       7       0954562424      41      459999  vip     online  095
-8       8       0959954645      56      459999  vip     online  095
-11      11      0954654642      45      399999  vip     online  095
-13      12      0954159954      51      399999  vip     online  095
-14      104     0959546364      51      159999  d       online  095
-17      14      0951462455      41      49999   s       online  095
-18      15      0951464241      36      299999  vip     online  095
-19      16      0951464465      44      59999   g       online  095
-20      17      0951465464      44      99999   g       online  095
-21      18      0951465636      45      299999  vip     online  095
-22      19      0951465642      42      299999  vip     online  095
-23      20      0951644564      44      39999   s       online  095
-24      21      0951645563      44      35999   s       online  095
-25      22      0951646455      45      35999   s       online  095
-26      23      0951651545      41      159999  d       online  095
-27      24      0951655415      41      59999   g       online  095
-29      26      0954454563      45      299999  vip     online  095
-31      28      0951655654      46      49999   s       online  095
-32      29      0951655645      46      49999   s       online  095
-33      30      0951656365      46      245999  d       online  095
-35      32      0954599959      64      299999  vip     online  095
-36      33      0954646415      44      159999  d       online  095
-38      35      0955144565      44      299999  vip     online  095
-40      37      0955424646      46      159999  vip     online  095
-41      38      0955465154      44      299999  vip     online  095
-42      39      0955644515      44      299999  vip     online  095
-43      40      0955651546      46      299999  vip     online  095
-44      41      0955652451      42      39999   s       online  095
-45      42      0955654514      44      99999   g       online  095
-46      43      0955655142      42      299999  vip     online  095
-49      45      0956154146      41      39999   s       online  095
-50      46      0956156365      46      69999   g       online  095
-52      48      0956365651      46      299999  vip     online  095
-94      89      0955656554      50      59999   vip     online  095
-55      50      0956464145      44      299999  vip     online  095
-56      51      0956464246      46      299999  vip     online  095
-61      56      0955145463      42      179999  vip     online  095
-63      58      0956426365      46      299999  vip     online  095
-64      59      0956464241      41      299999  vip     online  095
-65      60      0956151546      42      39999   g       online  095
-66      61      0956154642      42      39999   g       online  095
-68      63      0951596442      45      69999   vip     online  095
-69      64      0959515641      45      299999  vip     online  095
-71      66      0951464463      42      65999   vip     online  095
-72      67      0955415654      44      245999  vip     online  095
-73      68      0955636541      44      65999   vip     online  095
-87      82      0956365697      56      79999   vip     online  095
-105     98      0990545954      50      45999   s       online  099
-108     101     0995451463      46      99999   vip     online  099
-109     102     0995463645      51      299999  vip     f       099
-113     106     0995956463      56      199999  vip     online  099
-129     122     0955456363      46      299999  vip     online  095
-130     123     0955656424      46      299999  vip     online  095
-132     125     0990363645      45      29999   s       online  099
-133     126     0990363641      41      29999   s       online  099
-140     133     0964641536      44      6999    b       online  096
-141     134     0965463651      45      99999   vip     online  096
-145     138     0965651563      46      59999   g       online  096
-169     162     0914156451      36      69999   vip     online  091
-170     163     0914651546      41      79999   vip     online  091
-175     167     0924636546      45      79999   vip     online  092
-176     168     0924951545      44      39999   g       online  092
-180     172     0936454245      42      299999  vip     online  093
-181     173     0936464424      42      99999   vip     online  093
-182     174     0936469563      51      65999   g       online  093
-186     178     0936414595      46      159999  vip     online  093
-187     179     0936426542      41      59999   vip     online  093
-188     180     0936542463      42      99999   vip     online  093
-189     181     0936954545      50      159999  d       online  093
-191     183     0941453695      45      29999   g       online  094
-203     195     0946595963      56      45999   g       online  094
-205     197     0942646463      44      9999    b       online  094
-206     198     0942635445      42      15599   g       online  094
-215     207     0951456424      40      199999  d       online  095
-223     215     0624249599      50      45999   g       online  062
-224     216     0624424563      36      99999   d       online  062
-225     217     0624645636      42      99999   vip     online  062
-233     225     0624451563      36      65999   d       online  062
-234     226     0624246459      42      299999  vip     online  062
-245     237     0636456546      45      99999   vip     online  063
-246     238     0636425451      36      59999   vip     online  063
-247     239     0636466542      42      299999  vip     online  063
-248     240     0636454599      51      159999  vip     online  063
-250     242     0645424515      36      399999  vip     online  064
-251     243     0642465465      42      299999  vip     online  064
-252     244     0645455156      41      299999  vip     online  064
-253     245     0645645156      42      299999  vip     online  064
-254     246     0646515465      42      299999  vip     online  064
-255     247     0645641565      42      299999  vip     online  064
-256     248     0645154245      36      499999  vip     online  064
-258     250     0651452463      36      59999   vip     online  065
-262     254     0824241465      36      159999  vip     online  082
-263     255     0824645564      44      36999   s       online  082
-264     256     0824159555      44      159999  d       online  082
-265     257     0836365463      44      99999   d       online  083
-266     258     0836424563      41      159999  d       online  083
-267     259     0836442441      36      36599   s       online  083
-268     260     0836595963      54      45999   g       online  083
-270     262     0836364565      46      245999  d       online  083
-271     263     0836365964      50      29999   s       online  083
-272     264     0836514599      50      59999   g       online  083
-273     265     0836545636      46      99999   vip     online  083
-274     266     0836595424      46      299999  vip     online  083
-276     268     0842651546      41      45999   g       online  084
-277     269     0845424465      42      99999   vip     online  084
-278     270     0846241515      36      99999   vip     online  084
-280     272     0851424246      36      99999   d       online  085
-285     277     0863655144      42      36599   s       online  086
-286     278     0863996424      51      59999   b       online  086
-287     279     0864144699      51      9999    b       online  086
-288     280     0864241565      41      224999  d       online  086
-290     282     0864245463      42      245999  vip     online  086
-291     283     0864245642      41      199999  d       online  086
-292     284     0864246356      44      29999   b       online  086
-293     285     0864565642      46      155999  d       online  086
-294     286     0865561463      44      9999    b       f       086
-298     290     0864146463      46      9999    b       online  086
-299     291     0864999542      56      9999    b       online  086
-300     292     0864144563      41      49999   s       online  086
-306     298     0897969542      59      9999    b       online  089
-"""
+def convert_mysql_to_postgres(input_file, output_file):
+    with open(input_file, 'r', encoding='utf-8', errors='ignore') as f_in, \
+         open(output_file, 'w', encoding='utf-8') as f_out:
 
-pg_sql = """-- PostgreSQL Dump of phonenumber_sell
+        f_out.write("SET standard_conforming_strings = 'off';\n")
+        f_out.write("SET backslash_quote = 'on';\n")
+        f_out.write("BEGIN;\n")
+        
+        buffer = []
+        
+        for line in f_in:
+            line_content = line.strip()
+            
+            if not buffer and not line_content:
+                continue
+            
+            if not buffer and (line_content.startswith('--') or line_content.startswith('/*')):
+                continue
+                
+            buffer.append(line)
+            
+            if line_content.endswith(';'):
+                statement = "".join(buffer)
+                buffer = []
+                
+                converted_stmts = process_statement(statement)
+                if converted_stmts:
+                     for cs in converted_stmts:
+                        f_out.write(cs + "\n")
+        
+        if buffer:
+            statement = "".join(buffer)
+            converted_stmts = process_statement(statement)
+            if converted_stmts:
+                 for cs in converted_stmts:
+                    f_out.write(cs + "\n")
 
-CREATE TABLE IF NOT EXISTS public.phonenumber_sell (
-    pnumber_id SERIAL PRIMARY KEY,
-    pnumber_position INTEGER NOT NULL,
-    pnumber_num VARCHAR(30) NOT NULL,
-    pnumber_sum VARCHAR(2) NOT NULL,
-    pnumber_price INTEGER NOT NULL DEFAULT 0,
-    phone_group VARCHAR(30) NOT NULL DEFAULT 'vip',
-    sell_status VARCHAR(30) NOT NULL DEFAULT 'online',
-    prefix_group VARCHAR(3) NOT NULL
-);
+        f_out.write("COMMIT;\n")
 
-INSERT INTO public.phonenumber_sell (pnumber_id, pnumber_position, pnumber_num, pnumber_sum, pnumber_price, phone_group, sell_status, prefix_group) VALUES
-"""
-
-rows = data.strip().split('\n')
-values = []
-for row in rows:
-    cols = row.split('\t')
-    if len(cols) != 8:
-        cols = row.split() # Fallback if tabs are messy
+def process_statement(stmt):
+    stmt_clean = stmt.strip()
     
-    # cols indices:
-    # 0: pnumber_id (int)
-    # 1: pnumber_position (int)
-    # 2: pnumber_num (str)
-    # 3: pnumber_sum (str)
-    # 4: pnumber_price (int)
-    # 5: phone_group (str)
-    # 6: sell_status (str)
-    # 7: prefix_group (str)
+    if stmt_clean.upper().startswith('DROP TABLE'):
+        stmt = stmt.replace('`', '"')
+        return [stmt]
 
-    val_str = f"({cols[0]}, {cols[1]}, '{cols[2]}', '{cols[3]}', {cols[4]}, '{cols[5]}', '{cols[6]}', '{cols[7]}')"
-    values.append(val_str)
+    if stmt_clean.upper().startswith('CREATE TABLE'):
+        return [convert_create_table(stmt)]
+    
+    if stmt_clean.upper().startswith('INSERT INTO'):
+        return [convert_insert(stmt)]
+    
+    if stmt_clean.upper().startswith('ALTER TABLE'):
+         return convert_alter(stmt)
+         
+    return []
 
-pg_sql += ",\n".join(values) + ";"
+def convert_create_table(create_stmt):
+    # Normalize backticks first to simplify regex
+    create_stmt = create_stmt.replace('`', '"')
 
-with open('phonenumber_sell_pg.sql', 'w') as f:
-    f.write(pg_sql)
+    # Remove strict table name matching, focus on content conversion
+    # Ints
+    create_stmt = re.sub(r'tinyint\(\d+\)', 'SMALLINT', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'smallint\(\d+\)', 'SMALLINT', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'mediumint\(\d+\)', 'INTEGER', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'bigint\(\d+\)', 'BIGINT', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'\bint\(\d+\)', 'INTEGER', create_stmt, flags=re.IGNORECASE)
+    
+    # Float/Blob/Text/Datetime
+    create_stmt = re.sub(r'\bdouble\b', 'DOUBLE PRECISION', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'\bfloat\b', 'REAL', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'\bblob\b', 'BYTEA', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'tinyblob', 'BYTEA', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'mediumblob', 'BYTEA', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'longblob', 'BYTEA', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'binary\(\d+\)', 'BYTEA', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'varbinary\(\d+\)', 'BYTEA', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'tinytext', 'TEXT', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'mediumtext', 'TEXT', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'longtext', 'TEXT', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'datetime', 'TIMESTAMP', create_stmt, flags=re.IGNORECASE)
 
-print("done")
+    # Relax constraints: 0000-00-00 -> NULL might violate NOT NULL
+    # So remove NOT NULL from date/time types
+    create_stmt = re.sub(r'(TIMESTAMP|DATE)\s+NOT NULL', r'\1', create_stmt, flags=re.IGNORECASE)
+    
+    create_stmt = create_stmt.replace("DEFAULT '0000-00-00 00:00:00'", "DEFAULT NULL")
+    create_stmt = create_stmt.replace("DEFAULT '0000-00-00'", "DEFAULT NULL")
+    
+    # Validation: valid PostgreSQL does not allow "NOT NULL DEFAULT NULL"
+    create_stmt = create_stmt.replace("NOT NULL DEFAULT NULL", "DEFAULT NULL")
+
+    create_stmt = re.sub(r'UNSIGNED', '', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'CHARACTER SET [\w\d]+', '', create_stmt, flags=re.IGNORECASE)
+    create_stmt = re.sub(r'COLLATE [\w\d_]+', '', create_stmt, flags=re.IGNORECASE)
+    
+    # Remove table options after last paren
+    last_paren_index = create_stmt.rfind(')')
+    if last_paren_index != -1:
+        # Check if there's anything meaningful after it
+        tail = create_stmt[last_paren_index+1:]
+        if 'ENGINE' in tail.upper() or 'CHARSET' in tail.upper():
+             create_stmt = create_stmt[:last_paren_index+1] + ';'
+             
+    create_stmt = re.sub(r'AUTO_INCREMENT', 'GENERATED BY DEFAULT AS IDENTITY', create_stmt, flags=re.IGNORECASE)
+    
+    return create_stmt
+
+def convert_insert(insert_stmt):
+    insert_stmt = insert_stmt.replace('`', '"')
+    insert_stmt = insert_stmt.replace("'0000-00-00'", "NULL")
+    insert_stmt = insert_stmt.replace("'0000-00-00 00:00:00'", "NULL")
+    return insert_stmt
+
+def convert_alter(alter_stmt):
+    alter_stmt = alter_stmt.replace('`', '"')
+    
+    # More robust table name extraction
+    match = re.search(r'ALTER TABLE\s+"?(\w+)"?', alter_stmt, re.IGNORECASE)
+    if not match:
+        return [alter_stmt] # Fallback
+    table_name = match.group(1)
+    
+    match_end = match.end()
+    body = alter_stmt[match_end:].strip().rstrip(';')
+    
+    # Clean up body to single line for easier regex
+    body_clean = re.sub(r'\s+', ' ', body)
+    
+    output_stmts = []
+    
+    # Add Primary Key
+    pk_match = re.search(r'ADD PRIMARY KEY \((.*?)\)', body_clean, re.IGNORECASE)
+    if pk_match:
+        cols = pk_match.group(1)
+        output_stmts.append(f'ALTER TABLE "{table_name}" ADD PRIMARY KEY ({cols});')
+        
+    # Add Unique Keys - relaxed regex
+    # Matches: ADD UNIQUE KEY "name" (...) or ADD UNIQUE KEY name (...)
+    for uk_match in re.finditer(r'ADD UNIQUE KEY\s+"?(\w+)"?\s+\((.*?)\)', body_clean, re.IGNORECASE):
+        key_name = uk_match.group(1)
+        cols = uk_match.group(2)
+        output_stmts.append(f'ALTER TABLE "{table_name}" ADD CONSTRAINT "{table_name}_{key_name}" UNIQUE ({cols});')
+        
+    # Add Indices - relaxed regex
+    # Matches: ADD KEY "name" (...) or ADD KEY name (...)
+    for k_match in re.finditer(r'ADD KEY\s+"?(\w+)"?\s+\((.*?)\)', body_clean, re.IGNORECASE):
+        start_index = k_match.start()
+        # Lookbehind to ensure not UNIQUE
+        preceding = body_clean[max(0, start_index-10):start_index]
+        if 'UNIQUE' in preceding.upper():
+            continue
+            
+        key_name = k_match.group(1)
+        cols = k_match.group(2)
+        output_stmts.append(f'CREATE INDEX "{table_name}_{key_name}" ON "{table_name}" ({cols});')
+        
+    # Modify Auto Increment
+    # MODIFY "col" ... AUTO_INCREMENT
+    for mod_match in re.finditer(r'MODIFY\s+"?(\w+)"?.*?AUTO_INCREMENT', body_clean, re.IGNORECASE):
+        col_name = mod_match.group(1)
+        output_stmts.append(f'ALTER TABLE "{table_name}" ALTER COLUMN "{col_name}" ADD GENERATED BY DEFAULT AS IDENTITY;')
+
+    # If we found nothing but it looked like an ALTER TABLE, we might have failed parsing.
+    # But usually we find something. If regular ALTER (like adding columns) we might miss it here
+    # but the dump usually only has keys/auto_increment in ALTER statements at the end.
+    
+    if not output_stmts:
+        # If we couldn't parse it into components, assume we can't handle it or it's empty.
+        # Returning original might cause grammar error if syntax is MySQL specific.
+        # Let's return commented out to be safe if we can't parse?
+        # Or returns empty.
+        # But wait, if it was "ALTER TABLE t AUTO_INCREMENT=5", we just want to ignore it.
+        # So returning empty is correct for ignored attributes.
+        pass
+        
+    return output_stmts
+
+if __name__ == "__main__":
+    convert_mysql_to_postgres(sys.argv[1], sys.argv[2])
