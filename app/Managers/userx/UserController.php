@@ -70,40 +70,46 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
+        $size = strlen($dayListStr);
 
-			$size = strlen($dayListStr);
+        if ($size == 7) {
+            $numbDays = substr($dayListStr, 0, -1);
+        } else {
+            $numbDays = $dayListStr;
+        }
 
+        if (empty($numbDays)) {
+            return json_encode(array('cloth_color' => []));
+        }
 
-			if($size == 7){
-				$numbDays = substr($dayListStr, 0, -1);
-			}else{
-				$numbDays = $dayListStr;
-			}
+        // Bolt ⚡: Optimized N+1 query. Replaced loop with a single `IN` clause query.
+        // This reduces database round trips from N to 1, where N is the number of day IDs.
+        $dayIds = str_split($numbDays);
+        $placeholders = implode(',', array_fill(0, count($dayIds), '?'));
 
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+        $result = $this->db->prepare($sql);
+        $rows = [];
+        if ($result) {
+            $result->execute($dayIds);
+            $rows = $result->fetchAll(\PDO::FETCH_ASSOC);
+        }
 
+        // Re-order the results to match the input order to avoid breaking changes.
+        $colorMap = [];
+        foreach ($rows as $row) {
+            $colorMap[$row['colorid']] = $row;
+        }
 
-
-        for ($i = 0; $i < strlen($numbDays) ; $i++) {
-            $sql = "SELECT * FROM colortb WHERE colorid = '$dayListStr[$i]'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
-                }
+        $strColor = [];
+        foreach ($dayIds as $dayId) {
+            if (isset($colorMap[$dayId])) {
+                $strColor[] = $colorMap[$dayId];
             }
-
-        
-	}
+        }
 
         return json_encode(array('cloth_color' => $strColor));
-
-
     }
 
 
