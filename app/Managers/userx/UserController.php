@@ -72,38 +72,31 @@ class UserController extends Manager
     {
 
         $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
+        $size = strlen($dayListStr);
 
-			$size = strlen($dayListStr);
+        if ($size == 7) {
+            $numbDays = substr($dayListStr, 0, -1);
+        } else {
+            $numbDays = $dayListStr;
+        }
 
+        if (empty($numbDays)) {
+            return json_encode(array('cloth_color' => []));
+        }
 
-			if($size == 7){
-				$numbDays = substr($dayListStr, 0, -1);
-			}else{
-				$numbDays = $dayListStr;
-			}
+        // ⚡ Bolt Optimization: N+1 Query Fix
+        // Replaced a loop of single queries with a single `IN` clause query.
+        // This reduces database round-trips from N to 1, significantly improving performance.
+        $dayIds = str_split($numbDays);
+        $placeholders = implode(',', array_fill(0, count($dayIds), '?'));
 
-
-
-
-        for ($i = 0; $i < strlen($numbDays) ; $i++) {
-            $sql = "SELECT * FROM colortb WHERE colorid = '$dayListStr[$i]'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
-                }
-            }
-
-        
-	}
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+        $result = $this->db->prepare($sql);
+        $result->execute($dayIds);
+        $strColor = $result->fetchAll(\PDO::FETCH_ASSOC);
 
         return json_encode(array('cloth_color' => $strColor));
-
-
     }
 
 
