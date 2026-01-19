@@ -70,40 +70,35 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
+        $numbDays = strlen($dayListStr) == 7 ? substr($dayListStr, 0, -1) : $dayListStr;
 
-			$size = strlen($dayListStr);
+        if (empty($numbDays)) {
+            return json_encode(array('cloth_color' => []));
+        }
 
+        // Create an array of color IDs from the input string
+        $colorIds = str_split($numbDays);
 
-			if($size == 7){
-				$numbDays = substr($dayListStr, 0, -1);
-			}else{
-				$numbDays = $dayListStr;
-			}
+        // Create placeholders for the IN clause
+        $placeholders = implode(',', array_fill(0, count($colorIds), '?'));
 
+        // Fetch all colors in a single query
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
 
+        $result = $this->db->prepare($sql);
 
-
-        for ($i = 0; $i < strlen($numbDays) ; $i++) {
-            $sql = "SELECT * FROM colortb WHERE colorid = '$dayListStr[$i]'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
-                }
+        if ($result) {
+            $result->execute($colorIds);
+            $strColor = $result->fetchAll(\PDO::FETCH_ASSOC);
+            if ($strColor === false) { // fetchAll returns false on failure
+                $strColor = array();
             }
-
+        } else {
+            $strColor = array();
+        }
         
-	}
-
         return json_encode(array('cloth_color' => $strColor));
-
-
     }
 
 
