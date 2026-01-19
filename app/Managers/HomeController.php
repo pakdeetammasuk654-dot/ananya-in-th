@@ -16,6 +16,31 @@ class HomeController extends Manager
     private $continueDR = array();
 
     private $pairConDuo = 0;
+    private $numbersDataMap = null; // Cache for numbers table data
+
+    /**
+     * Fetches numbers data from the database and caches it for the request.
+     * The data is stored in a map for O(1) lookups.
+     *
+     * @return array The numbers data map, indexed by pairnumber.
+     */
+    private function getNumbersDataMap(): array
+    {
+        if ($this->numbersDataMap === null) {
+            // This is a one-time database hit per request.
+            $sql = "SELECT * FROM numbers ORDER BY pairnumberid ASC";
+            $result = $this->db->prepare($sql);
+            $result->execute();
+            $data = $result->fetchAll(\PDO::FETCH_OBJ);
+
+            $this->numbersDataMap = [];
+            // We map the data by pairnumber for O(1) lookups later.
+            foreach ($data as $row) {
+                $this->numbersDataMap[$row->pairnumber] = $row;
+            }
+        }
+        return $this->numbersDataMap;
+    }
 
 
     public function main($request, $response)
@@ -110,10 +135,8 @@ class HomeController extends Manager
 
     private function scoreByPosition($pairsA, $pairsB, $pairSum): array
     {
-        $sql = "SELECT * FROM numbers ORDER BY pairnumberid ASC";
-        $result = $this->db->prepare($sql);
-        $result->execute();
-        $data = $result->fetchAll(\PDO::FETCH_OBJ);
+        // Use the cached data instead of hitting the database again.
+        $data = $this->getNumbersDataMap();
 
         $countPairsA = count($pairsA);
         $countPairsB = count($pairsB);
@@ -133,97 +156,86 @@ class HomeController extends Manager
                 $pointSum = 25;
 
 
-                foreach ($data as $pairX) {
-                    if ($pairX->pairnumber == $pairSum) {
-
-                        if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
-                            $scoreD += $pointSum;
-                        }
-                        if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
-                            $scoreR += $pointSum;
-                        }
-
-                        //echo "scorePsum : " . $pointSum . '<br>';
-
-                        break;
+                // O(1) lookup
+                if (isset($data[$pairSum])) {
+                    $pairX = $data[$pairSum];
+                    if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
+                        $scoreD += $pointSum;
+                    }
+                    if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
+                        $scoreR += $pointSum;
                     }
                 }
 
 
                 foreach ($pairsA as $key => $pair) {
-                    foreach ($data as $pairX) {
-                        if ($pairX->pairnumber == $pair) {
+                    // O(1) lookup
+                    if (isset($data[$pair])) {
+                        $pairX = $data[$pair];
+                        switch ($key) {
+                            case 0:
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
+                                    $scoreD += $pointA0;
+                                }
 
-                            switch ($key) {
-                                case 0:
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
-                                        $scoreD += $pointA0;
-                                    }
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
+                                    $scoreR += $pointA0;
+                                }
 
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
-                                        $scoreR += $pointA0;
-                                    }
+                                //echo 'scoreA0 : ' . $pointA0 . '<br>';
 
-                                    //echo 'scoreA0 : ' . $pointA0 . '<br>';
+                                break;
+                            case 1:
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
+                                    $scoreD += $pointA1;
+                                }
 
-                                    break;
-                                case 1:
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
-                                        $scoreD += $pointA1;
-                                    }
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
+                                    $scoreR += $pointA1;
+                                }
 
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
-                                        $scoreR += $pointA1;
-                                    }
+                                //echo 'scoreA1 : ' . $pointA1 . '<br>';
+                                break;
+                            case 2:
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
+                                    $scoreD += $pointA2;
+                                }
 
-                                    //echo 'scoreA1 : ' . $pointA1 . '<br>';
-                                    break;
-                                case 2:
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
-                                        $scoreD += $pointA2;
-                                    }
-
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
-                                        $scoreR += $pointA2;
-                                    }
-                                    //echo 'scoreA2 : ' . $pointA2 . '<br>';
-                                    break;
-                            }
-
-                            break;
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
+                                    $scoreR += $pointA2;
+                                }
+                                //echo 'scoreA2 : ' . $pointA2 . '<br>';
+                                break;
                         }
                     }
                 }
 
                 foreach ($pairsB as $key => $pair) {
-                    foreach ($data as $pairX) {
-                        if ($pairX->pairnumber == $pair) {
-                            switch ($key) {
-                                case 0:
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
-                                        $scoreD += $pointB0;
-                                    }
+                    if (isset($data[$pair])) {
+                        $pairX = $data[$pair];
+                        switch ($key) {
+                            case 0:
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
+                                    $scoreD += $pointB0;
+                                }
 
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
-                                        $scoreR += $pointB0;
-                                    }
-                                    //echo 'scoreB0 : ' . $pointB0 . '<br>';
-                                    break;
-                                case 1:
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
-                                        $scoreD += $pointB1;
-                                    }
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
+                                    $scoreR += $pointB0;
+                                }
+                                //echo 'scoreB0 : ' . $pointB0 . '<br>';
+                                break;
+                            case 1:
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
+                                    $scoreD += $pointB1;
+                                }
 
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
-                                        $scoreR += $pointB1;
-                                    }
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
+                                    $scoreR += $pointB1;
+                                }
 
-                                    //echo 'scoreB1 : ' . $pointB1 . '<br>';
-                                    break;
+                                //echo 'scoreB1 : ' . $pointB1 . '<br>';
+                                break;
 
-                            }
-
-                            break;
                         }
                     }
                 }
@@ -238,78 +250,65 @@ class HomeController extends Manager
                 $pointSum = 35;
 
 
-                foreach ($data as $pairX) {
-                    if ($pairX->pairnumber == $pairSum) {
-
-                        if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
-                            $scoreD += $pointSum;
-                        }
-                        if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
-                            $scoreR += $pointSum;
-                        }
-
-                        //echo "scorePsum : " . $pointSum . '<br>';
-
-                        break;
+                if (isset($data[$pairSum])) {
+                    $pairX = $data[$pairSum];
+                    if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
+                        $scoreD += $pointSum;
+                    }
+                    if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
+                        $scoreR += $pointSum;
                     }
                 }
 
 
                 foreach ($pairsA as $key => $pair) {
-                    foreach ($data as $pairX) {
-                        if ($pairX->pairnumber == $pair) {
+                    if (isset($data[$pair])) {
+                        $pairX = $data[$pair];
+                        switch ($key) {
+                            case 0:
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
+                                    $scoreD += $pointA0;
+                                }
 
-                            switch ($key) {
-                                case 0:
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
-                                        $scoreD += $pointA0;
-                                    }
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
+                                    $scoreR += $pointA0;
+                                }
 
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
-                                        $scoreR += $pointA0;
-                                    }
+                                //echo 'scoreA0 : ' . $pointA0 . '<br>';
 
-                                    //echo 'scoreA0 : ' . $pointA0 . '<br>';
+                                break;
+                            case 1:
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
+                                    $scoreD += $pointA1;
+                                }
 
-                                    break;
-                                case 1:
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
-                                        $scoreD += $pointA1;
-                                    }
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
+                                    $scoreR += $pointA1;
+                                }
 
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
-                                        $scoreR += $pointA1;
-                                    }
+                                //echo 'scoreA1 : ' . $pointA1 . '<br>';
+                                break;
 
-                                    //echo 'scoreA1 : ' . $pointA1 . '<br>';
-                                    break;
-
-                            }
-
-                            break;
                         }
                     }
                 }
 
                 foreach ($pairsB as $key => $pair) {
-                    foreach ($data as $pairX) {
-                        if ($pairX->pairnumber == $pair) {
-                            switch ($key) {
-                                case 0:
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
-                                        $scoreD += $pointB0;
-                                    }
+                    if (isset($data[$pair])) {
+                        $pairX = $data[$pair];
+                        switch ($key) {
+                            case 0:
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
+                                    $scoreD += $pointB0;
+                                }
 
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
-                                        $scoreR += $pointB0;
-                                    }
-                                    //echo 'scoreB0 : ' . $pointB0 . '<br>';
-                                    break;
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
+                                    $scoreR += $pointB0;
+                                }
+                                //echo 'scoreB0 : ' . $pointB0 . '<br>';
+                                break;
 
 
-                            }
-
-                            break;
                         }
                     }
                 }
@@ -320,44 +319,34 @@ class HomeController extends Manager
                 $pointSum = 50;
 
 
-                foreach ($data as $pairX) {
-                    if ($pairX->pairnumber == $pairSum) {
-
-                        if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
-                            $scoreD += $pointSum;
-                        }
-                        if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
-                            $scoreR += $pointSum;
-                        }
-
-                        //echo "scorePsum : " . $pointSum . '<br>';
-
-                        break;
+                if (isset($data[$pairSum])) {
+                    $pairX = $data[$pairSum];
+                    if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
+                        $scoreD += $pointSum;
+                    }
+                    if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
+                        $scoreR += $pointSum;
                     }
                 }
 
 
                 foreach ($pairsA as $key => $pair) {
-                    foreach ($data as $pairX) {
-                        if ($pairX->pairnumber == $pair) {
+                    if (isset($data[$pair])) {
+                        $pairX = $data[$pair];
+                        switch ($key) {
+                            case 0:
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
+                                    $scoreD += $pointA0;
+                                }
 
-                            switch ($key) {
-                                case 0:
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'D') {
-                                        $scoreD += $pointA0;
-                                    }
+                                if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
+                                    $scoreR += $pointA0;
+                                }
 
-                                    if (mb_substr($pairX->pairtype, 0, 1) == 'R') {
-                                        $scoreR += $pointA0;
-                                    }
+                                //echo 'scoreA0 : ' . $pointA0 . '<br>';
 
-                                    //echo 'scoreA0 : ' . $pointA0 . '<br>';
+                                break;
 
-                                    break;
-
-                            }
-
-                            break;
                         }
                     }
                 }
@@ -517,98 +506,47 @@ class HomeController extends Manager
 
     private function setPairMiracle($pairsA, $pairsB, $pairSum)
     {
-
-        $pairsD = array();
-        $pairsR = array();
         $pairsAll = array();
         $pairMiracleD = array();
         $pairMiracleR = array();
-
-
         $pairMiracle = array();
 
-        $sql = "SELECT * FROM numbers ORDER BY pairnumberid ASC";
-        $result = $this->db->prepare($sql);
-        $result->execute();
-        $data = $result->fetchAll(\PDO::FETCH_OBJ);
+        // Use the cached map instead of querying the database.
+        $data = $this->getNumbersDataMap();
 
+        // Combine all pairs into a single array for processing.
+        $allPairsArr = array_merge($pairsA, $pairsB, [(string)$pairSum]);
 
-        foreach ($data as $v) {
-            foreach ($pairsA as $value) {
-                if ($v->pairnumber === $value && $v->pairtype[0] === "D") {
-                    array_push($pairsD, $value);
-                    array_push($pairsAll, $value);
-                }
-
-                if ($v->pairnumber === $value && $v->pairtype[0] === "R") {
-                    array_push($pairsR, $value);
-                    array_push($pairsAll, $value);
-                }
-
-
+        foreach ($allPairsArr as $pair) {
+            if (isset($data[$pair])) {
+                $v = $data[$pair];
+                // No need to check for existence, as we already have the unique pairs.
+                $pairsAll[$pair] = true;
             }
-
-            foreach ($pairsB as $value) {
-                if ($v->pairnumber === $value && $v->pairtype[0] === "D") {
-                    array_push($pairsD, $value);
-                    array_push($pairsAll, $value);
-                }
-
-                if ($v->pairnumber === $value && $v->pairtype[0] === "R") {
-                    array_push($pairsR, $value);
-                    array_push($pairsAll, $value);
-                }
-
-            }
-
-
-            if ($v->pairnumber === (string)$pairSum && $v->pairtype[0] === "D") {
-
-                array_push($pairsD, (string)$pairSum);
-                array_push($pairsAll, (string)$pairSum);
-            }
-
-            if ($v->pairnumber === (string)$pairSum && $v->pairtype[0] === "R") {
-                array_push($pairsR, (string)$pairSum);
-                array_push($pairsAll, (string)$pairSum);
-            }
-
         }
 
 
-        foreach ($data as $value) {
-            foreach (array_count_values($pairsAll) as $keyNum => $num) {
-
-                if ($value->pairnumber === (string)$keyNum) {
-                    if ($value->pairtype[0] === 'D') {
-                        array_push($pairMiracleD,
-                            array("pairnumber" => $keyNum, "pairtype" => $value->pairtype,
-                                "pairpoint" => $value->pairpoint, "miracledesc" => $value->miracledesc,
-                                "miracledetail" => $value->detail_vip));
-
-                        break;
-                    }
-
-
-                    if ($value->pairtype[0] === 'R') {
-                        array_push($pairMiracleR,
-                            array("pairnumber" => $keyNum, "pairtype" => $value->pairtype,
-                                "pairpoint" => $value->pairpoint, "miracledesc" => $value->miracledesc,
-                                "miracledetail" => $value->detail_vip));
-
-                        break;
-                    }
+        foreach (array_keys($pairsAll) as $keyNum) {
+            if (isset($data[$keyNum])) {
+                $value = $data[$keyNum];
+                if ($value->pairtype[0] === 'D') {
+                    array_push($pairMiracleD,
+                        array("pairnumber" => $keyNum, "pairtype" => $value->pairtype,
+                            "pairpoint" => $value->pairpoint, "miracledesc" => $value->miracledesc,
+                            "miracledetail" => $value->detail_vip));
 
                 }
 
 
+                if ($value->pairtype[0] === 'R') {
+                    array_push($pairMiracleR,
+                        array("pairnumber" => $keyNum, "pairtype" => $value->pairtype,
+                            "pairpoint" => $value->pairpoint, "miracledesc" => $value->miracledesc,
+                            "miracledetail" => $value->detail_vip));
+
+                }
             }
-
-
         }
-
-
-
 
 
         foreach ($pairMiracleD as $v) {
