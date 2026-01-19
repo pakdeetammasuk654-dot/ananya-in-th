@@ -87,19 +87,24 @@ class UserController extends Manager
 
 
 
-        for ($i = 0; $i < strlen($numbDays) ; $i++) {
-            $sql = "SELECT * FROM colortb WHERE colorid = '$dayListStr[$i]'";
+        $dayIds = str_split($numbDays);
+
+        if (!empty($dayIds)) {
+            // ⚡ Bolt: Replaced N+1 query with a single IN clause for performance.
+            // This avoids running a separate database query for each day ID.
+            $placeholders = implode(',', array_fill(0, count($dayIds), '?'));
+            $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+
             $result = $this->db->prepare($sql);
+
             if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
+                $result->execute($dayIds);
+                $colors = $result->fetchAll(\PDO::FETCH_ASSOC);
+                if ($colors) {
+                    $strColor = $colors;
                 }
             }
-
-        
-	}
+        }
 
         return json_encode(array('cloth_color' => $strColor));
 
