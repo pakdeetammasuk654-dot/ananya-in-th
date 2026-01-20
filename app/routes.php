@@ -106,6 +106,8 @@ $app->group('/phone', function (RouteCollectorProxy $group) {
     $group->get('/{phoneNumber}', 'App\Managers\Telephone\PairController:mainPhone');
 });
 
+$app->get('/shopsell/main', 'App\Managers\Telephone\PhoneNumberSellManager:mainPhoneSell');
+
 $app->get('/tabian/main/{carid}', 'App\Managers\TabianController:main');
 $app->get('/name/main/{name}/{surname}/{birthday}', 'App\Managers\NameController:main');
 $app->get('/nickname/main/{nickname}/{birthday}', 'App\Managers\NickNameController:main');
@@ -642,6 +644,9 @@ $app->group('/web', function (RouteCollectorProxy $group) use ($container) {
             echo "<br><a href='/web/admin/articles'>Back to List</a>";
             return $response;
         });
+
+        // Send Bag Color Notification (for web admin)
+        $adminGroup->get('/notifications/send-bag-colors', 'App\Managers\NotificationController:sendBagColors');
 
     });
 
