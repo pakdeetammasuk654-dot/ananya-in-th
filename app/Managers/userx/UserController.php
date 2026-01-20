@@ -66,22 +66,28 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
-                }
+        if (empty($dayListStr)) {
+            $response->getBody()->write(json_encode(array('cloth_color' => [])));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+
+        $colorIds = str_split($dayListStr);
+        // Bolt ⚡: N+1 query fix. Consolidated multiple single queries into one IN clause.
+        $placeholders = implode(',', array_fill(0, count($colorIds), '?'));
+
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+
+        if ($stmt) {
+            $stmt->execute($colorIds);
+            $strColor = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            if ($strColor === false) { // fetchAll can return false on failure
+                $strColor = [];
             }
+        } else {
+            $strColor = [];
         }
 
         $response->getBody()->write(json_encode(array('cloth_color' => $strColor)));
