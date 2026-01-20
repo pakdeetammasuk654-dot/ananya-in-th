@@ -17,7 +17,7 @@ class NameController extends Manager
     private $sumShaName = 0, $sumShaSurName = 0, $sumShaNameSurName = 0;
     private $sumSatName = 0, $sumSatSurName = 0, $sumSatNameSurName = 0;
 
-    private $ayadName = '', $ayadSurName = '' , $ayadNameSurName = '';
+    private $ayadName = '', $ayadSurName = '', $ayadNameSurName = '';
 
     private $pairShaName = '', $pairShaSurName = '', $pairShaNameSurName = '';
     private $pairSatName = '', $pairSatSurName = '', $pairSatNameSurName = '';
@@ -30,9 +30,9 @@ class NameController extends Manager
 
 
 
-    public function main($request, $response)
+    public function main($request, $response, $args)
     {
-        $this->setNameRequest($request);
+        $this->setNameRequest($request, $args);
 
 
         $this->setKarakini($this->birthDay, $this->aName, $this->aSurName);
@@ -61,42 +61,57 @@ class NameController extends Manager
 
 
         $this->apiName = array(
-            'birthDay' => $this->birthDay, 'name' => $this->name, 'surname' => $this->surName,
+            'birthDay' => $this->birthDay,
+            'name' => $this->name,
+            'surname' => $this->surName,
 
-            'sumSatName' => $this->sumSatName, 'sumSatSurName' => $this->sumSatSurName,
+            'sumSatName' => $this->sumSatName,
+            'sumSatSurName' => $this->sumSatSurName,
             'sumSatNameSurName' => $this->sumSatNameSurName,
-            'pairSatName' => $this->pairSatName, 'pairSatSurName' => $this->pairSatSurName,
+            'pairSatName' => $this->pairSatName,
+            'pairSatSurName' => $this->pairSatSurName,
             'pairSatNameSurName' => $this->pairSatNameSurName,
 
             'kName' => $this->kName,
 
 
-            'sumShaName' => $this->sumShaName, 'sumShaSurName' => $this->sumShaSurName, 'sumShaNameSurName' => $this->sumShaNameSurName,
+            'sumShaName' => $this->sumShaName,
+            'sumShaSurName' => $this->sumShaSurName,
+            'sumShaNameSurName' => $this->sumShaNameSurName,
 
-            'pairShaName' => $this->pairShaName, 'pairShaSurName' => $this->pairShaSurName,
+            'pairShaName' => $this->pairShaName,
+            'pairShaSurName' => $this->pairShaSurName,
 
             'pairShaNameSurName' => $this->pairShaNameSurName,
 
-            'ayadName' => $this->ayadName, 'ayadSurName' => $this->ayadSurName, 'ayadNameSurName' => $this->ayadNameSurName,
+            'ayadName' => $this->ayadName,
+            'ayadSurName' => $this->ayadSurName,
+            'ayadNameSurName' => $this->ayadNameSurName,
 
 
             'pairsUnique' => $this->pairsUnique,
 
 
-            'satName' => $this->dealSatNameFormat, 'satSurName' => $this->dealSatSurNameFormat,
-            'shaName' => $this->shaNameDealFormat, 'shaSurName' => $this->shaSurNameDealFormat,
+            'satName' => $this->dealSatNameFormat,
+            'satSurName' => $this->dealSatSurNameFormat,
+            'shaName' => $this->shaNameDealFormat,
+            'shaSurName' => $this->shaSurNameDealFormat,
 
             'pairsMiracle' => $this->pairsMiracle,
         );
 
-        echo json_encode($this->apiName);
+        $response->getBody()->write(json_encode($this->apiName));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
-    private function setNameRequest($request)
+    private function setNameRequest($request, $args)
     {
-        $strBirthDay = preg_replace('/\s+/', '', $request->getAttribute('birthday'));
-        $strName = preg_replace('/\s+/', '', $request->getAttribute('name'));
-        $strSurName = preg_replace('/\s+/', '', $request->getAttribute('surname'));
+        $strBirthDay = preg_replace('/\s+/', '', $args['birthday']);
+        $strName = preg_replace('/\s+/', '', $args['name']);
+        $strSurName = preg_replace('/\s+/', '', $args['surname']);
+        // $strBirthDay = preg_replace('/\s+/', '', $request->getAttribute('birthday'));
+        // $strName = preg_replace('/\s+/', '', $request->getAttribute('name'));
+        // $strSurName = preg_replace('/\s+/', '', $request->getAttribute('surname'));
 
 
         $this->birthDay = $strBirthDay;
@@ -112,31 +127,123 @@ class NameController extends Manager
     private function setNameToNum($name, $surName)
     {
         $txt = array(
-            'ก' => '1', 'ด' => '1', 'ถ' => '1', 'ท' => '1', 'ภ' => '1', 'ฤ' => '1', 'ฦ' => '1', 'า' => '1', 'ำ' => '1', 'ุ' => '1', '่' => '1',
-            'ข' => '2', 'ง' => '2', 'ช' => '2', 'บ' => '2', 'ป' => '2', 'เ' => '2', 'แ' => '2', 'ู' => '2', '้' => '2',
-            'ฆ' => '3', 'ต' => '3', 'ฑ' => '3', 'ฒ' => '3', '๋' => '3',
-            'ค' => '4', 'ธ' => '4', 'ญ' => '4', 'ร' => '4', 'ษ' => '4', 'ะ' => '4', 'โ' => '4', 'ั' => '4', 'ิ' => '4',
-            'ฉ' => '5', 'ฌ' => '5', 'ณ' => '5', 'น' => '5', 'ม' => '5', 'ห' => '5', 'ฎ' => '5', 'ฮ' => '5', 'ฬ' => '5', 'ึ' => '5',
-            'จ' => '6', 'ล' => '6', 'ว' => '6', 'อ' => '6', 'ใ' => '6',
-            'ซ' => '7', 'ศ' => '7', 'ส' => '7', '๊' => '7', 'ี' => '7', 'ื' => '7',
-            'ผ' => '8', 'ฝ' => '8', 'พ' => '8', 'ฟ' => '8', 'ย' => '8', '็' => '8',
-            'ฏ' => '9', 'ฐ' => '9', 'ไ' => '9', '์' => '9',
-            'a' => '1', 'i' => '1', 'j' => '1', 'q' => '1', 'y' => '1',
-            'A' => '1', 'I' => '1', 'J' => '1', 'Q' => '1', 'Y' => '1',
-            'b' => '2', 'k' => '2', 'r' => '2',
-            'B' => '2', 'K' => '2', 'R' => '2',
-            'c' => '3', 'g' => '3', 'l' => '3', 's' => '3',
-            'C' => '3', 'G' => '3', 'L' => '3', 'S' => '3',
-            'd' => '4', 'm' => '4', 't' => '4',
-            'D' => '4', 'M' => '4', 'T' => '4',
-            'e' => '5', 'h' => '5', 'n' => '5', 'x' => '5',
-            'E' => '5', 'H' => '5', 'N' => '5', 'X' => '5',
-            'u' => '6', 'v' => '6', 'w' => '6',
-            'U' => '6', 'V' => '6', 'W' => '6',
-            'o' => '7', 'z' => '7',
-            'O' => '7', 'Z' => '7',
-            'f' => '8', 'p' => '8',
-            'F' => '8', 'P' => '8'
+            'ก' => '1',
+            'ด' => '1',
+            'ถ' => '1',
+            'ท' => '1',
+            'ภ' => '1',
+            'ฤ' => '1',
+            'ฦ' => '1',
+            'า' => '1',
+            'ำ' => '1',
+            'ุ' => '1',
+            '่' => '1',
+            'ข' => '2',
+            'ง' => '2',
+            'ช' => '2',
+            'บ' => '2',
+            'ป' => '2',
+            'เ' => '2',
+            'แ' => '2',
+            'ู' => '2',
+            '้' => '2',
+            'ฆ' => '3',
+            'ต' => '3',
+            'ฑ' => '3',
+            'ฒ' => '3',
+            '๋' => '3',
+            'ค' => '4',
+            'ธ' => '4',
+            'ญ' => '4',
+            'ร' => '4',
+            'ษ' => '4',
+            'ะ' => '4',
+            'โ' => '4',
+            'ั' => '4',
+            'ิ' => '4',
+            'ฉ' => '5',
+            'ฌ' => '5',
+            'ณ' => '5',
+            'น' => '5',
+            'ม' => '5',
+            'ห' => '5',
+            'ฎ' => '5',
+            'ฮ' => '5',
+            'ฬ' => '5',
+            'ึ' => '5',
+            'จ' => '6',
+            'ล' => '6',
+            'ว' => '6',
+            'อ' => '6',
+            'ใ' => '6',
+            'ซ' => '7',
+            'ศ' => '7',
+            'ส' => '7',
+            '๊' => '7',
+            'ี' => '7',
+            'ื' => '7',
+            'ผ' => '8',
+            'ฝ' => '8',
+            'พ' => '8',
+            'ฟ' => '8',
+            'ย' => '8',
+            '็' => '8',
+            'ฏ' => '9',
+            'ฐ' => '9',
+            'ไ' => '9',
+            '์' => '9',
+            'a' => '1',
+            'i' => '1',
+            'j' => '1',
+            'q' => '1',
+            'y' => '1',
+            'A' => '1',
+            'I' => '1',
+            'J' => '1',
+            'Q' => '1',
+            'Y' => '1',
+            'b' => '2',
+            'k' => '2',
+            'r' => '2',
+            'B' => '2',
+            'K' => '2',
+            'R' => '2',
+            'c' => '3',
+            'g' => '3',
+            'l' => '3',
+            's' => '3',
+            'C' => '3',
+            'G' => '3',
+            'L' => '3',
+            'S' => '3',
+            'd' => '4',
+            'm' => '4',
+            't' => '4',
+            'D' => '4',
+            'M' => '4',
+            'T' => '4',
+            'e' => '5',
+            'h' => '5',
+            'n' => '5',
+            'x' => '5',
+            'E' => '5',
+            'H' => '5',
+            'N' => '5',
+            'X' => '5',
+            'u' => '6',
+            'v' => '6',
+            'w' => '6',
+            'U' => '6',
+            'V' => '6',
+            'W' => '6',
+            'o' => '7',
+            'z' => '7',
+            'O' => '7',
+            'Z' => '7',
+            'f' => '8',
+            'p' => '8',
+            'F' => '8',
+            'P' => '8'
         );
 
 
@@ -225,14 +332,58 @@ class NameController extends Manager
 
     private function setShaName(array $aName, array $aSurName)
     {
-        $txt_star = array('อ' => '6', 'ะ' => '6', 'า' => '6', 'ิ' => '6', 'ี' => '6', 'ุ' => '6', 'ู' => '6', 'เ' => '6', 'โ' => '6',
-            'ก' => '15', 'ข' => '15', 'ค' => '15', 'ฆ' => '15', 'ง' => '15',
-            'จ' => '8', 'ฉ' => '8', 'ช' => '8', 'ซ' => '8', 'ฌ' => '8', 'ญ' => '8',
-            'ฎ' => '17', 'ฏ' => '17', 'ฐ' => '17', 'ฑ' => '17', 'ฒ' => '17', 'ณ' => '17',
-            'บ' => '19', 'ป' => '19', 'ผ' => '19', 'ฝ' => '19', 'พ' => '19', 'ฟ' => '19', 'ภ' => '19', 'ม' => '19',
-            'ศ' => '21', 'ษ' => '21', 'ส' => '21', 'ห' => '21', 'ฬ' => '21', 'ฮ' => '21',
-            'ด' => '10', 'ต' => '10', 'ถ' => '10', 'ท' => '10', 'ธ' => '10', 'น' => '10',
-            'ย' => '12', 'ร' => '12', 'ล' => '12', 'ว' => '12');
+        $txt_star = array(
+            'อ' => '6',
+            'ะ' => '6',
+            'า' => '6',
+            'ิ' => '6',
+            'ี' => '6',
+            'ุ' => '6',
+            'ู' => '6',
+            'เ' => '6',
+            'โ' => '6',
+            'ก' => '15',
+            'ข' => '15',
+            'ค' => '15',
+            'ฆ' => '15',
+            'ง' => '15',
+            'จ' => '8',
+            'ฉ' => '8',
+            'ช' => '8',
+            'ซ' => '8',
+            'ฌ' => '8',
+            'ญ' => '8',
+            'ฎ' => '17',
+            'ฏ' => '17',
+            'ฐ' => '17',
+            'ฑ' => '17',
+            'ฒ' => '17',
+            'ณ' => '17',
+            'บ' => '19',
+            'ป' => '19',
+            'ผ' => '19',
+            'ฝ' => '19',
+            'พ' => '19',
+            'ฟ' => '19',
+            'ภ' => '19',
+            'ม' => '19',
+            'ศ' => '21',
+            'ษ' => '21',
+            'ส' => '21',
+            'ห' => '21',
+            'ฬ' => '21',
+            'ฮ' => '21',
+            'ด' => '10',
+            'ต' => '10',
+            'ถ' => '10',
+            'ท' => '10',
+            'ธ' => '10',
+            'น' => '10',
+            'ย' => '12',
+            'ร' => '12',
+            'ล' => '12',
+            'ว' => '12'
+        );
 
 
         foreach ($aName as $kN => $vN) {
@@ -270,7 +421,7 @@ class NameController extends Manager
         foreach ($shaName as $k => $v) {
 
             foreach ($v as $num) {
-                $this->sumShaName += (int)$num;
+                $this->sumShaName += (int) $num;
 
             }
 
@@ -278,7 +429,7 @@ class NameController extends Manager
         foreach ($shaSurName as $k => $v) {
 
             foreach ($v as $num) {
-                $this->sumShaSurName += (int)$num;
+                $this->sumShaSurName += (int) $num;
 
             }
 
@@ -296,7 +447,7 @@ class NameController extends Manager
         foreach ($aName as $k => $v) {
 
             foreach ($v as $num) {
-                $this->sumSatName += (int)$num;
+                $this->sumSatName += (int) $num;
 
             }
 
@@ -304,7 +455,7 @@ class NameController extends Manager
         foreach ($aSurName as $k => $v) {
 
             foreach ($v as $num) {
-                $this->sumSatSurName += (int)$num;
+                $this->sumSatSurName += (int) $num;
 
             }
 
@@ -321,22 +472,22 @@ class NameController extends Manager
         $sumy = 0;
 
         for ($i = 0; $i < strlen($sumShaString); $i++) {
-            $sumx += (int)substr($sumShaString, $i, 1);
+            $sumx += (int) substr($sumShaString, $i, 1);
         }
 
         for ($i = 0; $i < strlen($sumx); $i++) {
-            $sumy += (int)substr($sumx, $i, 1);
+            $sumy += (int) substr($sumx, $i, 1);
         }
 
         if ($sumy >= 10) {
             $sumz = $sumy;
             $sumy = 0;
             for ($i = 0; $i < strlen($sumz); $i++) {
-                $sumy += (int)substr($sumz, $i, 1);
+                $sumy += (int) substr($sumz, $i, 1);
             }
         }
 
-        return (string)$sumy;
+        return (string) $sumy;
 
     }
 
@@ -348,10 +499,10 @@ class NameController extends Manager
 
         if ($sumShaString >= 100) {
 
-            $pair = array('pair' => substr((string)$sumShaString, 1, 2), 'fang' => substr((string)$sumShaString, 0, 2));
+            $pair = array('pair' => substr((string) $sumShaString, 1, 2), 'fang' => substr((string) $sumShaString, 0, 2));
 
         } else {
-            $pair = array('pair' => (string)$sumShaString, 'fang' => null);
+            $pair = array('pair' => (string) $sumShaString, 'fang' => null);
         }
 
 
@@ -416,10 +567,16 @@ class NameController extends Manager
             foreach ($pairsUnique as $pair) {
 
                 if ($value->pairnumber === $pair) {
-                    array_push($pairMiracle,
-                        array("pairnumber" => $pair, "pairtype" => $value->pairtype,
-                            "pairpoint" => $value->pairpoint, "miracledesc" => $value->miracledesc,
-                            "miracledetail" => $value->detail_vip));
+                    array_push(
+                        $pairMiracle,
+                        array(
+                            "pairnumber" => $pair,
+                            "pairtype" => $value->pairtype,
+                            "pairpoint" => $value->pairpoint,
+                            "miracledesc" => $value->miracledesc,
+                            "miracledetail" => $value->detail_vip
+                        )
+                    );
 
                     break;
                 }

@@ -18,12 +18,13 @@ class HomeController extends Manager
     private $pairConDuo = 0;
 
 
-    public function main($request, $response)
+    public function main($request, $response, $args)
     {
 
-        if ($request->getAttribute('homeid') != null) {
+        if ($args['homeid'] != null) {
+            // if ($request->getAttribute('homeid') != null) {
 
-            $this->setHomeId($request);
+            $this->setHomeId($request, $args);
             //$this->setPairsA($this->homeId);
             $this->setPairsAV2($this->homeId);
             $this->setPairsBV2($this->homeId);
@@ -52,13 +53,14 @@ class HomeController extends Manager
             'continueDR' => $this->continueDR,
             'pairConDuo' => $this->pairConDuo,
 
-            'pairSumNumber' => (string)$this->sumNumber,
+            'pairSumNumber' => (string) $this->sumNumber,
             'pairUnique' => $this->pairUnique,
             'homeReport' => $this->getMiracleSummary($scoreTotal['scoreD'], $scoreTotal['scoreR']),
             'pairMiracle' => $this->pairMiracle,
         );
 
-        return json_encode($this->apiHome);
+        $response->getBody()->write(json_encode($this->apiHome));
+        return $response->withHeader('Content-Type', 'application/json');
 
     }
 
@@ -369,9 +371,10 @@ class HomeController extends Manager
 
     }
 
-    private function setHomeId($request)
+    private function setHomeId($request, $args)
     {
-        $this->homeId = trim($request->getAttribute('homeid'));
+        $this->homeId = trim($args['homeid']);
+        // $this->homeId = trim($request->getAttribute('homeid'));
     }
 
     private function setPairsA($homeId)
@@ -428,7 +431,11 @@ class HomeController extends Manager
         for ($i = 0; $i < ceil(mb_strlen($homeId) / 2); $i++) {
             $pair = substr($homeId, $n, 2);
             if ($pair != 0 && mb_strlen($pair) % 2 == 0) {
-                array_push($pairsB, $pair);
+
+                if (!in_array($pair, $this->pairsA)) {
+                    array_push($pairsB, $pair);
+                }
+
             } else {
                 break;
             }
@@ -483,7 +490,7 @@ class HomeController extends Manager
     {
         $n = 0;
         for ($i = 0; $i < strlen($homeId); $i++) {
-            $mChar = (int)substr($homeId, $i, 1);
+            $mChar = (int) substr($homeId, $i, 1);
 
             $n += $mChar;
         }
@@ -503,11 +510,11 @@ class HomeController extends Manager
             array_push($allPairsArr, $value);
         }
 
-        array_push($allPairsArr, (string)$sumNumber);
+        array_push($allPairsArr, (string) $sumNumber);
 
 
         foreach (array_count_values($allPairsArr) as $key => $value) {
-            array_push($pairsOut, (string)$key);
+            array_push($pairsOut, (string) $key);
         }
 
 
@@ -562,15 +569,15 @@ class HomeController extends Manager
             }
 
 
-            if ($v->pairnumber === (string)$pairSum && $v->pairtype[0] === "D") {
+            if ($v->pairnumber === (string) $pairSum && $v->pairtype[0] === "D") {
 
-                array_push($pairsD, (string)$pairSum);
-                array_push($pairsAll, (string)$pairSum);
+                array_push($pairsD, (string) $pairSum);
+                array_push($pairsAll, (string) $pairSum);
             }
 
-            if ($v->pairnumber === (string)$pairSum && $v->pairtype[0] === "R") {
-                array_push($pairsR, (string)$pairSum);
-                array_push($pairsAll, (string)$pairSum);
+            if ($v->pairnumber === (string) $pairSum && $v->pairtype[0] === "R") {
+                array_push($pairsR, (string) $pairSum);
+                array_push($pairsAll, (string) $pairSum);
             }
 
         }
@@ -579,22 +586,34 @@ class HomeController extends Manager
         foreach ($data as $value) {
             foreach (array_count_values($pairsAll) as $keyNum => $num) {
 
-                if ($value->pairnumber === (string)$keyNum) {
+                if ($value->pairnumber === (string) $keyNum) {
                     if ($value->pairtype[0] === 'D') {
-                        array_push($pairMiracleD,
-                            array("pairnumber" => $keyNum, "pairtype" => $value->pairtype,
-                                "pairpoint" => $value->pairpoint, "miracledesc" => $value->miracledesc,
-                                "miracledetail" => $value->detail_vip));
+                        array_push(
+                            $pairMiracleD,
+                            array(
+                                "pairnumber" => $keyNum,
+                                "pairtype" => $value->pairtype,
+                                "pairpoint" => $value->pairpoint,
+                                "miracledesc" => $value->miracledesc,
+                                "miracledetail" => $value->detail_vip
+                            )
+                        );
 
                         break;
                     }
 
 
                     if ($value->pairtype[0] === 'R') {
-                        array_push($pairMiracleR,
-                            array("pairnumber" => $keyNum, "pairtype" => $value->pairtype,
-                                "pairpoint" => $value->pairpoint, "miracledesc" => $value->miracledesc,
-                                "miracledetail" => $value->detail_vip));
+                        array_push(
+                            $pairMiracleR,
+                            array(
+                                "pairnumber" => $keyNum,
+                                "pairtype" => $value->pairtype,
+                                "pairpoint" => $value->pairpoint,
+                                "miracledesc" => $value->miracledesc,
+                                "miracledetail" => $value->detail_vip
+                            )
+                        );
 
                         break;
                     }
@@ -643,12 +662,12 @@ class HomeController extends Manager
         foreach (array_count_values($pairsAll) as $k => $value) {
 
             foreach ($pairMiracle as $key => $v) {
-                if ((string)$k === (string)$v['pairnumber']) {
-                    if ((string)$v['pairtype'][0] === 'D') {
+                if ((string) $k === (string) $v['pairnumber']) {
+                    if ((string) $v['pairtype'][0] === 'D') {
                         $scored = $scored + $v['pairpoint'];
                     }
 
-                    if ((string)$v['pairtype'][0] === 'R') {
+                    if ((string) $v['pairtype'][0] === 'R') {
                         $scorer = $scorer + $v['pairpoint'];
                     }
                 }
@@ -679,13 +698,13 @@ class HomeController extends Manager
                     if ($value == $v['pairnumber']) {
 
 
-                        if ((string)$v['pairtype'][0] == (string)'D') {
+                        if ((string) $v['pairtype'][0] == (string) 'D') {
 
                             $conA++;
                             break;
                         }
 
-                        if ((string)$v['pairtype'][0] == (string)'R') {
+                        if ((string) $v['pairtype'][0] == (string) 'R') {
                             $statusDa = 1;
                             break;
                         }
@@ -705,13 +724,13 @@ class HomeController extends Manager
                     if ($value == $v['pairnumber']) {
 
 
-                        if ((string)$v['pairtype'][0] == (string)'D') {
+                        if ((string) $v['pairtype'][0] == (string) 'D') {
 
                             $conB++;
                             break;
                         }
 
-                        if ((string)$v['pairtype'][0] == (string)'R') {
+                        if ((string) $v['pairtype'][0] == (string) 'R') {
                             $statusDb = 1;
                             break;
                         }

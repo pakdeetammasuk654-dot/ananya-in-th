@@ -5,15 +5,17 @@ use App\Daos\PhoneNumItemCollectionDao;
 use App\Daos\PhoneNumItemDao;
 use App\Managers\Manager;
 
-class PhoneNumberSellManager extends Manager{
+class PhoneNumberSellManager extends Manager
+{
 
     private $apiPhoneSell;
 
-    public function mainPhoneSell(){
+    public function mainPhoneSell($request, $response, $args)
+    {
 
         $this->apiPhoneSell = new PhoneNumItemCollectionDao();
 
-    /*$this->apiPhoneSell->phonenumberSell = array(new PhoneNumItemDao('00', '00','085999999','44', 25000, 'vip', 'online', '095'));*/
+        /*$this->apiPhoneSell->phonenumberSell = array(new PhoneNumItemDao('00', '00','085999999','44', 25000, 'vip', 'online', '095'));*/
 
 
         $sql = "SELECT * FROM phonenumber_sell where phonenumber_sell.sell_status NOT LIKE 'f' ORDER BY pnumber_price DESC";
@@ -33,7 +35,8 @@ class PhoneNumberSellManager extends Manager{
 
 
 
-        return json_encode($this->apiPhoneSell);
+        $response->getBody()->write(json_encode($this->apiPhoneSell));
+        return $response->withHeader('Content-Type', 'application/json');
 
     }
 

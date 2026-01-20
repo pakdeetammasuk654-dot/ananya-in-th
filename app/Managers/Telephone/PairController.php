@@ -73,10 +73,11 @@ class PairController extends Manager
     private $percentNumber6996 = 0;
 
 
-    public function mainPhone($request, $response)
+    public function mainPhone($request, $response, $args)
     {
         $this->mainApi = new APIPhone();
-        $phoneNumber = $request->getAttribute('phoneNumber');
+        $phoneNumber = $args['phoneNumber'];
+        // $phoneNumber = $request->getAttribute('phoneNumber');
         if (is_numeric($phoneNumber) && strlen($phoneNumber) == 10) {
             //preparing
             $this->pairsA = $this->getPairsMain('A', $phoneNumber);
@@ -139,7 +140,7 @@ class PairController extends Manager
 
 
             $this->mainApi->percentAfterDupAB = $this->percentAfterDupAB();
-            $this->mainApi->percentAfterStickNum = array("percentNumber6996"=>$this->percentNumber6996, "percentNumber44" => $this->percentNumber44);
+            $this->mainApi->percentAfterStickNum = array("percentNumber6996" => $this->percentNumber6996, "percentNumber44" => $this->percentNumber44);
 
 
             $this->mainApi->scoreTotalOfTotal = $this->scoreTotalOfTotal;
@@ -159,12 +160,14 @@ class PairController extends Manager
 
 
 
-            return json_encode($this->mainApi);
+            $response->getBody()->write(json_encode($this->mainApi));
+            return $response->withHeader('Content-Type', 'application/json');
 
 
         } else {
             $this->xmessage = new AppMessage('prepare fail');
-            return json_encode($this->xmessage);
+            $response->getBody()->write(json_encode($this->xmessage));
+            return $response->withHeader('Content-Type', 'application/json');
         }
 
     }
@@ -194,12 +197,21 @@ class PairController extends Manager
         }
 
 
-        switch ($count6996){
-            case 1: $this->percentNumber6996 = 10; break;
-            case 2: $this->percentNumber6996 = 15; break;
-            case 3: $this->percentNumber6996 = 20; break;
-            case 4: $this->percentNumber6996 = 25; break;
-            default: break;
+        switch ($count6996) {
+            case 1:
+                $this->percentNumber6996 = 10;
+                break;
+            case 2:
+                $this->percentNumber6996 = 15;
+                break;
+            case 3:
+                $this->percentNumber6996 = 20;
+                break;
+            case 4:
+                $this->percentNumber6996 = 25;
+                break;
+            default:
+                break;
         }
 
 
@@ -212,27 +224,27 @@ class PairController extends Manager
         }
 
         switch ($count44) {
-            case 2 :
+            case 2:
                 $this->miScoreNumberDup44 = 350;
                 $this->miScoreNumberDup44AddR = 100;
                 $this->percentNumber44 = 10;
                 break;
-            case 3 :
+            case 3:
                 $this->miScoreNumberDup44 = 450;
                 $this->miScoreNumberDup44AddR = 150;
                 $this->percentNumber44 = 15;
                 break;
-            case 4 :
+            case 4:
                 $this->miScoreNumberDup44 = 550;
                 $this->miScoreNumberDup44AddR = 200;
                 $this->percentNumber44 = 18;
                 break;
-            case 5 :
+            case 5:
                 $this->miScoreNumberDup44 = 650;
                 $this->miScoreNumberDup44AddR = 250;
                 $this->percentNumber44 = 21;
                 break;
-            case 6 :
+            case 6:
                 $this->miScoreNumberDup44 = 750;
                 $this->miScoreNumberDup44AddR = 300;
                 $this->percentNumber44 = 23;
@@ -390,7 +402,8 @@ class PairController extends Manager
             array('89', '98'),
 
 
-            array('99', '99'));
+            array('99', '99')
+        );
 
         $arrCountX = array();
 
@@ -1005,10 +1018,10 @@ class PairController extends Manager
         $pairs = str_split($phonenum, 1);
         $sumPair = 0;
         foreach ($pairs as $value) {
-            $sumPair += (int)$value;
+            $sumPair += (int) $value;
         }
 
-        return (string)$sumPair;
+        return (string) $sumPair;
 
 
     }
@@ -1029,7 +1042,7 @@ class PairController extends Manager
         array_push($pairs, $pairSum);
 
         foreach (array_count_values($pairs) as $key => $value) {
-            array_push($pairsOut, (string)$key);
+            array_push($pairsOut, (string) $key);
         }
 
         return $pairsOut;
@@ -1115,7 +1128,7 @@ class PairController extends Manager
             foreach ($this->pairsUnique as $v) {
                 foreach ($dataMiracle as $value) {
                     if ($v === $value->pairnumber) {
-                        array_push($arrItems, new PairItemDao($value->pairnumber, $value->miracledesc, $this->getPercentByPair($value->pairnumber), $value->pairtype, (int)$value->pairpoint, $value->detail_vip));
+                        array_push($arrItems, new PairItemDao($value->pairnumber, $value->miracledesc, $this->getPercentByPair($value->pairnumber), $value->pairtype, (int) $value->pairpoint, $value->detail_vip));
                         break;
                     }
                 }
@@ -1309,7 +1322,8 @@ class PairController extends Manager
         return array('percentTotalD' => $percentD, 'percentTotalR' => $percentR);
     }
 
-    private function percentAfterDupAB():int{
+    private function percentAfterDupAB(): int
+    {
         return $this->percentDup;
     }
 

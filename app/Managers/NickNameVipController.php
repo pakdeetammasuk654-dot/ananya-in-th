@@ -50,8 +50,8 @@ class NickNameVipController extends Manager
         );
 
 
-        echo json_encode($api);
-
+        $response->getBody()->write(json_encode($api));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
 
@@ -80,8 +80,8 @@ class NickNameVipController extends Manager
             'nick_name_list_vip' => $data
         );
 
-        echo json_encode($api);
-
+        $response->getBody()->write(json_encode($api));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
     public function listNickNameByParamDayOnly($request, $response)
@@ -123,8 +123,8 @@ class NickNameVipController extends Manager
             'nick_name_list_vip' => $vArr
         );
 
-        echo json_encode($api);
-
+        $response->getBody()->write(json_encode($api));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
 
@@ -188,7 +188,8 @@ class NickNameVipController extends Manager
         );
 
 
-        echo json_encode($api);
+        $response->getBody()->write(json_encode($api));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
 
@@ -254,7 +255,8 @@ class NickNameVipController extends Manager
         );
 
 
-        echo json_encode($api);
+        $response->getBody()->write(json_encode($api));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
 

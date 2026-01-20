@@ -7,27 +7,53 @@ namespace Composer\Autoload;
 class ComposerStaticInit6ef9c7ea2f6603f38b096bfdea82d23b
 {
     public static $files = array (
+        '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
+        '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
+        '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         '253c157292f75eb38082b5acb06f3f01' => __DIR__ . '/..' . '/nikic/fast-route/src/functions.php',
+        'b33e3d135e5d9e47d845c576147bda89' => __DIR__ . '/..' . '/php-di/php-di/src/functions.php',
     );
 
     public static $prefixLengthsPsr4 = array (
         'S' => 
         array (
             'Slim\\Views\\' => 11,
+            'Slim\\Psr7\\' => 10,
             'Slim\\' => 5,
         ),
         'P' => 
         array (
+            'Psr\\Log\\' => 8,
+            'Psr\\Http\\Server\\' => 16,
             'Psr\\Http\\Message\\' => 17,
+            'Psr\\Http\\Client\\' => 16,
             'Psr\\Container\\' => 14,
+            'Psr\\Cache\\' => 10,
+        ),
+        'L' => 
+        array (
+            'Laravel\\SerializableClosure\\' => 28,
         ),
         'I' => 
         array (
-            'Interop\\Container\\' => 18,
+            'Invoker\\' => 8,
+        ),
+        'G' => 
+        array (
+            'GuzzleHttp\\Psr7\\' => 16,
+            'GuzzleHttp\\Promise\\' => 19,
+            'GuzzleHttp\\' => 11,
+            'Google\\Auth\\' => 12,
         ),
         'F' => 
         array (
+            'Firebase\\JWT\\' => 13,
+            'Fig\\Http\\Message\\' => 17,
             'FastRoute\\' => 10,
+        ),
+        'D' => 
+        array (
+            'DI\\' => 3,
         ),
         'A' => 
         array (
@@ -40,39 +66,83 @@ class ComposerStaticInit6ef9c7ea2f6603f38b096bfdea82d23b
         array (
             0 => __DIR__ . '/..' . '/slim/php-view/src',
         ),
+        'Slim\\Psr7\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/slim/psr7/src',
+        ),
         'Slim\\' => 
         array (
             0 => __DIR__ . '/..' . '/slim/slim/Slim',
         ),
+        'Psr\\Log\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/log/src',
+        ),
+        'Psr\\Http\\Server\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/http-server-handler/src',
+            1 => __DIR__ . '/..' . '/psr/http-server-middleware/src',
+        ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-message/src',
+            0 => __DIR__ . '/..' . '/psr/http-factory/src',
+            1 => __DIR__ . '/..' . '/psr/http-message/src',
+        ),
+        'Psr\\Http\\Client\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/http-client/src',
         ),
         'Psr\\Container\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/container/src',
         ),
-        'Interop\\Container\\' => 
+        'Psr\\Cache\\' => 
         array (
-            0 => __DIR__ . '/..' . '/container-interop/container-interop/src/Interop/Container',
+            0 => __DIR__ . '/..' . '/psr/cache/src',
+        ),
+        'Laravel\\SerializableClosure\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/laravel/serializable-closure/src',
+        ),
+        'Invoker\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-di/invoker/src',
+        ),
+        'GuzzleHttp\\Psr7\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/psr7/src',
+        ),
+        'GuzzleHttp\\Promise\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/promises/src',
+        ),
+        'GuzzleHttp\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
+        ),
+        'Google\\Auth\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/google/auth/src',
+        ),
+        'Firebase\\JWT\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/firebase/php-jwt/src',
+        ),
+        'Fig\\Http\\Message\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/fig/http-message-util/src',
         ),
         'FastRoute\\' => 
         array (
             0 => __DIR__ . '/..' . '/nikic/fast-route/src',
         ),
+        'DI\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-di/php-di/src',
+        ),
         'App\\' => 
         array (
             0 => __DIR__ . '/../..' . '/app',
-        ),
-    );
-
-    public static $prefixesPsr0 = array (
-        'P' => 
-        array (
-            'Pimple' => 
-            array (
-                0 => __DIR__ . '/..' . '/pimple/pimple/src',
-            ),
         ),
     );
 
@@ -89,14 +159,17 @@ class ComposerStaticInit6ef9c7ea2f6603f38b096bfdea82d23b
         'App\\Managers\\NewsController' => __DIR__ . '/../..' . '/app/Managers/news/NewsController.php',
         'App\\Managers\\NickNameController' => __DIR__ . '/../..' . '/app/Managers/NickNameController.php',
         'App\\Managers\\NickNameVipController' => __DIR__ . '/../..' . '/app/Managers/NickNameVipController.php',
+        'App\\Managers\\NotificationController' => __DIR__ . '/../..' . '/app/Managers/NotificationController.php',
         'App\\Managers\\PersonController' => __DIR__ . '/../..' . '/app/Managers/person/PersonController.php',
         'App\\Managers\\PersonManager' => __DIR__ . '/../..' . '/app/Managers/person/PersonManager.php',
         'App\\Managers\\PhoneController' => __DIR__ . '/../..' . '/app/Managers/PhoneController.php',
+        'App\\Managers\\PlayStoreScraper' => __DIR__ . '/../..' . '/app/Managers/PlayStoreScraper.php',
         'App\\Managers\\TabianController' => __DIR__ . '/../..' . '/app/Managers/TabianController.php',
         'App\\Managers\\Telephone\\PairController' => __DIR__ . '/../..' . '/app/Managers/Telephone/PairController.php',
         'App\\Managers\\Telephone\\PhoneNumberSellManager' => __DIR__ . '/../..' . '/app/Managers/Telephone/PhoneNumberSellManager.php',
         'App\\Managers\\Telephone\\Util\\APIPhone' => __DIR__ . '/../..' . '/app/Managers/Telephone/Util/APIPhone.php',
         'App\\Managers\\Telephone\\Util\\AppMessage' => __DIR__ . '/../..' . '/app/Managers/Telephone/Util/AppMessage.php',
+        'App\\Managers\\ThaiCalendarHelper' => __DIR__ . '/../..' . '/app/Managers/ThaiCalendarHelper.php',
         'App\\Managers\\UserController' => __DIR__ . '/../..' . '/app/Managers/userx/UserController.php',
         'App\\Middleware\\MemberMiddleware' => __DIR__ . '/../..' . '/app/middlewares/MemberMiddleware.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
@@ -107,7 +180,6 @@ class ComposerStaticInit6ef9c7ea2f6603f38b096bfdea82d23b
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInit6ef9c7ea2f6603f38b096bfdea82d23b::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInit6ef9c7ea2f6603f38b096bfdea82d23b::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit6ef9c7ea2f6603f38b096bfdea82d23b::$prefixesPsr0;
             $loader->classMap = ComposerStaticInit6ef9c7ea2f6603f38b096bfdea82d23b::$classMap;
 
         }, null, ClassLoader::class);

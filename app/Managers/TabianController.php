@@ -57,9 +57,10 @@ class TabianController extends Manager
 
     private $percentSiang = 0;
 
-    public function main($request, $response)
+    public function main($request, $response, $args)
     {
-        $carid = $request->getAttribute('carid');
+        $carid = $args['carid'];
+        // $carid = $request->getAttribute('carid');
 
         $this->carRAW = $carid;
 
@@ -145,7 +146,8 @@ class TabianController extends Manager
 
         //print_r($this->percentByCaseA);
 
-        return json_encode($this->apiTabian);
+        $response->getBody()->write(json_encode($this->apiTabian));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
 
@@ -284,25 +286,25 @@ class TabianController extends Manager
                 if ($pairsA[1] == $pair['pairnumber']) {
                     switch ($pair['pairtype']) {
 
-                        case 'D10' :
+                        case 'D10':
                             $pointAddR = 100;
                             break;
 
-                        case 'D8' :
+                        case 'D8':
                             $pointAddR = 50;
                             break;
 
-                        case 'D5' :
+                        case 'D5':
                             $pointAddR = 25;
                             break;
 
-                        case 'R10' :
+                        case 'R10':
                             $pointMiD = 100;
                             break;
-                        case 'R7' :
+                        case 'R7':
                             $pointMiD = 50;
                             break;
-                        case 'R5' :
+                        case 'R5':
                             $pointMiD = 25;
                             break;
                     }
@@ -320,25 +322,25 @@ class TabianController extends Manager
                 if ($pairsA[0] == $pair['pairnumber']) {
                     switch ($pair['pairtype']) {
 
-                        case 'D10' :
+                        case 'D10':
                             $pointAddR = 100;
                             break;
 
-                        case 'D8' :
+                        case 'D8':
                             $pointAddR = 50;
                             break;
 
-                        case 'D5' :
+                        case 'D5':
                             $pointAddR = 25;
                             break;
 
-                        case 'R10' :
+                        case 'R10':
                             $pointMiD = 100;
                             break;
-                        case 'R7' :
+                        case 'R7':
                             $pointMiD = 50;
                             break;
-                        case 'R5' :
+                        case 'R5':
                             $pointMiD = 25;
                             break;
                     }
@@ -349,7 +351,8 @@ class TabianController extends Manager
         }
 
 
-        return array('scoreAngsolMiD' => $pointMiD, 'scoreAngsolAddR' => $pointAddR);;
+        return array('scoreAngsolMiD' => $pointMiD, 'scoreAngsolAddR' => $pointAddR);
+        ;
 
 
     }
@@ -684,7 +687,8 @@ class TabianController extends Manager
         return array(
 
             'sumPercentD' => $pointD - $this->percentPairMi - $percentCheckPair + $pointPercentD,
-            'sumPercentR' => $pointR + $this->percentPairMi + $percentCheckPair - $pointPercentR);
+            'sumPercentR' => $pointR + $this->percentPairMi + $percentCheckPair - $pointPercentR
+        );
 
     }
 
@@ -1611,31 +1615,123 @@ class TabianController extends Manager
     private function changeTextToNumberV2($fullCarId): string
     {
         $txt = array(
-            'ก' => '1', 'ด' => '1', 'ถ' => '1', 'ท' => '1', 'ภ' => '1', 'ฤ' => '1', 'ฦ' => '1', 'า' => '1', 'ำ' => '1', 'ุ' => '1', '่' => '1',
-            'ข' => '2', 'ง' => '2', 'ช' => '2', 'บ' => '2', 'ป' => '2', 'เ' => '2', 'แ' => '2', 'ู' => '2', '้' => '2',
-            'ฆ' => '3', 'ต' => '3', 'ฑ' => '3', 'ฒ' => '3', '๋' => '3',
-            'ค' => '4', 'ธ' => '4', 'ญ' => '4', 'ร' => '4', 'ษ' => '4', 'ะ' => '4', 'โ' => '4', 'ั' => '4', 'ิ' => '4',
-            'ฉ' => '5', 'ฌ' => '5', 'ณ' => '5', 'น' => '5', 'ม' => '5', 'ห' => '5', 'ฎ' => '5', 'ฮ' => '5', 'ฬ' => '5', 'ึ' => '5',
-            'จ' => '6', 'ล' => '6', 'ว' => '6', 'อ' => '6', 'ใ' => '6',
-            'ซ' => '7', 'ศ' => '7', 'ส' => '7', '๊' => '7', 'ี' => '7', 'ื' => '7',
-            'ผ' => '8', 'ฝ' => '8', 'พ' => '8', 'ฟ' => '8', 'ย' => '8', '็' => '8',
-            'ฏ' => '9', 'ฐ' => '9', 'ไ' => '9', '์' => '9',
-            'a' => '1', 'i' => '1', 'j' => '1', 'q' => '1', 'y' => '1',
-            'A' => '1', 'I' => '1', 'J' => '1', 'Q' => '1', 'Y' => '1',
-            'b' => '2', 'k' => '2', 'r' => '2',
-            'B' => '2', 'K' => '2', 'R' => '2',
-            'c' => '3', 'g' => '3', 'l' => '3', 's' => '3',
-            'C' => '3', 'G' => '3', 'L' => '3', 'S' => '3',
-            'd' => '4', 'm' => '4', 't' => '4',
-            'D' => '4', 'M' => '4', 'T' => '4',
-            'e' => '5', 'h' => '5', 'n' => '5', 'x' => '5',
-            'E' => '5', 'H' => '5', 'N' => '5', 'X' => '5',
-            'u' => '6', 'v' => '6', 'w' => '6',
-            'U' => '6', 'V' => '6', 'W' => '6',
-            'o' => '7', 'z' => '7',
-            'O' => '7', 'Z' => '7',
-            'f' => '8', 'p' => '8',
-            'F' => '8', 'P' => '8'
+            'ก' => '1',
+            'ด' => '1',
+            'ถ' => '1',
+            'ท' => '1',
+            'ภ' => '1',
+            'ฤ' => '1',
+            'ฦ' => '1',
+            'า' => '1',
+            'ำ' => '1',
+            'ุ' => '1',
+            '่' => '1',
+            'ข' => '2',
+            'ง' => '2',
+            'ช' => '2',
+            'บ' => '2',
+            'ป' => '2',
+            'เ' => '2',
+            'แ' => '2',
+            'ู' => '2',
+            '้' => '2',
+            'ฆ' => '3',
+            'ต' => '3',
+            'ฑ' => '3',
+            'ฒ' => '3',
+            '๋' => '3',
+            'ค' => '4',
+            'ธ' => '4',
+            'ญ' => '4',
+            'ร' => '4',
+            'ษ' => '4',
+            'ะ' => '4',
+            'โ' => '4',
+            'ั' => '4',
+            'ิ' => '4',
+            'ฉ' => '5',
+            'ฌ' => '5',
+            'ณ' => '5',
+            'น' => '5',
+            'ม' => '5',
+            'ห' => '5',
+            'ฎ' => '5',
+            'ฮ' => '5',
+            'ฬ' => '5',
+            'ึ' => '5',
+            'จ' => '6',
+            'ล' => '6',
+            'ว' => '6',
+            'อ' => '6',
+            'ใ' => '6',
+            'ซ' => '7',
+            'ศ' => '7',
+            'ส' => '7',
+            '๊' => '7',
+            'ี' => '7',
+            'ื' => '7',
+            'ผ' => '8',
+            'ฝ' => '8',
+            'พ' => '8',
+            'ฟ' => '8',
+            'ย' => '8',
+            '็' => '8',
+            'ฏ' => '9',
+            'ฐ' => '9',
+            'ไ' => '9',
+            '์' => '9',
+            'a' => '1',
+            'i' => '1',
+            'j' => '1',
+            'q' => '1',
+            'y' => '1',
+            'A' => '1',
+            'I' => '1',
+            'J' => '1',
+            'Q' => '1',
+            'Y' => '1',
+            'b' => '2',
+            'k' => '2',
+            'r' => '2',
+            'B' => '2',
+            'K' => '2',
+            'R' => '2',
+            'c' => '3',
+            'g' => '3',
+            'l' => '3',
+            's' => '3',
+            'C' => '3',
+            'G' => '3',
+            'L' => '3',
+            'S' => '3',
+            'd' => '4',
+            'm' => '4',
+            't' => '4',
+            'D' => '4',
+            'M' => '4',
+            'T' => '4',
+            'e' => '5',
+            'h' => '5',
+            'n' => '5',
+            'x' => '5',
+            'E' => '5',
+            'H' => '5',
+            'N' => '5',
+            'X' => '5',
+            'u' => '6',
+            'v' => '6',
+            'w' => '6',
+            'U' => '6',
+            'V' => '6',
+            'W' => '6',
+            'o' => '7',
+            'z' => '7',
+            'O' => '7',
+            'Z' => '7',
+            'f' => '8',
+            'p' => '8',
+            'F' => '8',
+            'P' => '8'
         );
 
         $caridConvert = null;
@@ -1676,7 +1772,7 @@ class TabianController extends Manager
 
 
     //นับหาจำนวนตัวเลขหลังตัวอักษร 1 ตัว
-    private function getSingleNum($tabianRAW): Int
+    private function getSingleNum($tabianRAW): int
     {
         $positionX = 0;
         $singleNum = false;
@@ -1715,7 +1811,7 @@ class TabianController extends Manager
         return $singleNum;
     }
 
-    private function countPayan($tabianRAW): Int
+    private function countPayan($tabianRAW): int
     {
 
         $count = 0;
@@ -1741,7 +1837,7 @@ class TabianController extends Manager
 
     }
 
-    private function countNumber($tabianRAW): Int
+    private function countNumber($tabianRAW): int
     {
 
         $count = 0;
@@ -1944,10 +2040,17 @@ class TabianController extends Manager
                     }
 
 
-                    array_push($tem,
-                        array("pairnumber" => $pair, 'percent' => $percentNumberDR, "pairtype" => $value->pairtype,
-                            "pairpoint" => (int)$value->pairpoint, "miracledesc" => $value->miracledesc,
-                            "miracledetail" => $value->vip_detail));
+                    array_push(
+                        $tem,
+                        array(
+                            "pairnumber" => $pair,
+                            'percent' => $percentNumberDR,
+                            "pairtype" => $value->pairtype,
+                            "pairpoint" => (int) $value->pairpoint,
+                            "miracledesc" => $value->miracledesc,
+                            "miracledetail" => $value->vip_detail
+                        )
+                    );
 
                     break;
                 }
@@ -1993,10 +2096,10 @@ class TabianController extends Manager
 
         $n = 0;
         foreach (str_split($carIdNumber, 1) as $value) {
-            $n += (int)$value;
+            $n += (int) $value;
         }
 
-        $this->pairSum = (string)$n;
+        $this->pairSum = (string) $n;
     }
 
 
@@ -2125,31 +2228,123 @@ class TabianController extends Manager
     private function setCharKeyV()
     {
         $this->txt = array(
-            'ก' => '1', 'ด' => '1', 'ถ' => '1', 'ท' => '1', 'ภ' => '1', 'ฤ' => '1', 'ฦ' => '1', 'า' => '1', 'ำ' => '1', 'ุ' => '1', '่' => '1',
-            'ข' => '2', 'ง' => '2', 'ช' => '2', 'บ' => '2', 'ป' => '2', 'เ' => '2', 'แ' => '2', 'ู' => '2', '้' => '2',
-            'ฆ' => '3', 'ต' => '3', 'ฑ' => '3', 'ฒ' => '3', '๋' => '3',
-            'ค' => '4', 'ธ' => '4', 'ญ' => '4', 'ร' => '4', 'ษ' => '4', 'ะ' => '4', 'โ' => '4', 'ั' => '4', 'ิ' => '4',
-            'ฉ' => '5', 'ฌ' => '5', 'ณ' => '5', 'น' => '5', 'ม' => '5', 'ห' => '5', 'ฎ' => '5', 'ฮ' => '5', 'ฬ' => '5', 'ึ' => '5',
-            'จ' => '6', 'ล' => '6', 'ว' => '6', 'อ' => '6', 'ใ' => '6',
-            'ซ' => '7', 'ศ' => '7', 'ส' => '7', '๊' => '7', 'ี' => '7', 'ื' => '7',
-            'ผ' => '8', 'ฝ' => '8', 'พ' => '8', 'ฟ' => '8', 'ย' => '8', '็' => '8',
-            'ฏ' => '9', 'ฐ' => '9', 'ไ' => '9', '์' => '9',
-            'a' => '1', 'i' => '1', 'j' => '1', 'q' => '1', 'y' => '1',
-            'A' => '1', 'I' => '1', 'J' => '1', 'Q' => '1', 'Y' => '1',
-            'b' => '2', 'k' => '2', 'r' => '2',
-            'B' => '2', 'K' => '2', 'R' => '2',
-            'c' => '3', 'g' => '3', 'l' => '3', 's' => '3',
-            'C' => '3', 'G' => '3', 'L' => '3', 'S' => '3',
-            'd' => '4', 'm' => '4', 't' => '4',
-            'D' => '4', 'M' => '4', 'T' => '4',
-            'e' => '5', 'h' => '5', 'n' => '5', 'x' => '5',
-            'E' => '5', 'H' => '5', 'N' => '5', 'X' => '5',
-            'u' => '6', 'v' => '6', 'w' => '6',
-            'U' => '6', 'V' => '6', 'W' => '6',
-            'o' => '7', 'z' => '7',
-            'O' => '7', 'Z' => '7',
-            'f' => '8', 'p' => '8',
-            'F' => '8', 'P' => '8'
+            'ก' => '1',
+            'ด' => '1',
+            'ถ' => '1',
+            'ท' => '1',
+            'ภ' => '1',
+            'ฤ' => '1',
+            'ฦ' => '1',
+            'า' => '1',
+            'ำ' => '1',
+            'ุ' => '1',
+            '่' => '1',
+            'ข' => '2',
+            'ง' => '2',
+            'ช' => '2',
+            'บ' => '2',
+            'ป' => '2',
+            'เ' => '2',
+            'แ' => '2',
+            'ู' => '2',
+            '้' => '2',
+            'ฆ' => '3',
+            'ต' => '3',
+            'ฑ' => '3',
+            'ฒ' => '3',
+            '๋' => '3',
+            'ค' => '4',
+            'ธ' => '4',
+            'ญ' => '4',
+            'ร' => '4',
+            'ษ' => '4',
+            'ะ' => '4',
+            'โ' => '4',
+            'ั' => '4',
+            'ิ' => '4',
+            'ฉ' => '5',
+            'ฌ' => '5',
+            'ณ' => '5',
+            'น' => '5',
+            'ม' => '5',
+            'ห' => '5',
+            'ฎ' => '5',
+            'ฮ' => '5',
+            'ฬ' => '5',
+            'ึ' => '5',
+            'จ' => '6',
+            'ล' => '6',
+            'ว' => '6',
+            'อ' => '6',
+            'ใ' => '6',
+            'ซ' => '7',
+            'ศ' => '7',
+            'ส' => '7',
+            '๊' => '7',
+            'ี' => '7',
+            'ื' => '7',
+            'ผ' => '8',
+            'ฝ' => '8',
+            'พ' => '8',
+            'ฟ' => '8',
+            'ย' => '8',
+            '็' => '8',
+            'ฏ' => '9',
+            'ฐ' => '9',
+            'ไ' => '9',
+            '์' => '9',
+            'a' => '1',
+            'i' => '1',
+            'j' => '1',
+            'q' => '1',
+            'y' => '1',
+            'A' => '1',
+            'I' => '1',
+            'J' => '1',
+            'Q' => '1',
+            'Y' => '1',
+            'b' => '2',
+            'k' => '2',
+            'r' => '2',
+            'B' => '2',
+            'K' => '2',
+            'R' => '2',
+            'c' => '3',
+            'g' => '3',
+            'l' => '3',
+            's' => '3',
+            'C' => '3',
+            'G' => '3',
+            'L' => '3',
+            'S' => '3',
+            'd' => '4',
+            'm' => '4',
+            't' => '4',
+            'D' => '4',
+            'M' => '4',
+            'T' => '4',
+            'e' => '5',
+            'h' => '5',
+            'n' => '5',
+            'x' => '5',
+            'E' => '5',
+            'H' => '5',
+            'N' => '5',
+            'X' => '5',
+            'u' => '6',
+            'v' => '6',
+            'w' => '6',
+            'U' => '6',
+            'V' => '6',
+            'W' => '6',
+            'o' => '7',
+            'z' => '7',
+            'O' => '7',
+            'Z' => '7',
+            'f' => '8',
+            'p' => '8',
+            'F' => '8',
+            'P' => '8'
         );
     }
 
@@ -2158,10 +2353,10 @@ class TabianController extends Manager
         $n = 0;
 
         for ($i = 0; $i < strlen($numLast); $i++) {
-            $n += (int)substr($numLast, $i, 1);
+            $n += (int) substr($numLast, $i, 1);
         }
 
-        $this->pairSumNumLast = (string)$n;
+        $this->pairSumNumLast = (string) $n;
 
     }
 
