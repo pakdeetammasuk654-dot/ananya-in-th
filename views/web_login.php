@@ -51,6 +51,13 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3CA7E6;
+            box-shadow: 0 0 0 3px rgba(60, 167, 230, 0.2);
         }
 
         button {
@@ -63,10 +70,16 @@
             cursor: pointer;
             font-size: 1rem;
             margin-top: 1rem;
+            transition: background-color 0.2s, box-shadow 0.2s;
         }
 
         button:hover {
             background-color: #2b8ac4;
+        }
+
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(60, 167, 230, 0.4);
         }
 
         .alert {
