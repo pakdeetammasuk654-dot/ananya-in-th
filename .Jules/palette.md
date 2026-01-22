@@ -1,0 +1,3 @@
+## 2024-07-25 - Consistent Styling for Accessibility
+**Learning:** This application consistently uses inline `<style>` blocks for its CSS, rather than a central stylesheet. This means small, targeted accessibility improvements (like adding `:focus-visible` states) must also be implemented inline to maintain the existing pattern.
+**Action:** When adding future accessibility or UX improvements, I will continue to add styles directly to the relevant view files to ensure consistency with the established codebase architecture.
