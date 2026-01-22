@@ -66,25 +66,44 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
-                }
+        // BOLT ⚡: Optimization to prevent N+1 query.
+        // Instead of querying for each color ID in a loop, fetch all colors in a single query.
+        if (empty($dayListStr)) {
+            $response->getBody()->write(json_encode(array('cloth_color' => [])));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+
+        $originalColorIds = str_split($dayListStr);
+        $uniqueColorIds = array_unique($originalColorIds);
+
+        // Create a string of placeholders for the IN clause (?, ?, ?).
+        $placeholders = implode(',', array_fill(0, count($uniqueColorIds), '?'));
+
+        // Prepare the SQL statement.
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+
+        // Bind the color IDs to the placeholders and execute.
+        $stmt->execute(array_values($uniqueColorIds));
+        $colorsFromDb = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Create a map of colorid to color data for efficient lookup.
+        $colorMap = [];
+        foreach ($colorsFromDb as $color) {
+            $colorMap[$color['colorid']] = $color;
+        }
+
+        // Reconstruct the final color list, preserving original order and duplicates.
+        $finalColors = [];
+        foreach ($originalColorIds as $id) {
+            if (isset($colorMap[$id])) {
+                $finalColors[] = $colorMap[$id];
             }
         }
 
-        $response->getBody()->write(json_encode(array('cloth_color' => $strColor)));
+        $response->getBody()->write(json_encode(array('cloth_color' => $finalColors)));
         return $response->withHeader('Content-Type', 'application/json');
     }
 
