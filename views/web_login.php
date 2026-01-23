@@ -69,6 +69,48 @@
             background-color: #2b8ac4;
         }
 
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            -webkit-animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+
+        @-webkit-keyframes spin {
+            to {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
         .alert {
             padding: 0.75rem;
             border-radius: 4px;
@@ -109,7 +151,7 @@
             <?php if (isset($error)): ?>
                 <div class="alert alert-error" style="display: block;"><?php echo $error; ?></div>
             <?php endif; ?>
-            <form action="/web/login" method="POST">
+            <form id="loginForm" action="/web/login" method="POST">
                 <div class="form-group">
                     <label for="username">ชื่อผู้ใช้</label>
                     <input type="text" id="username" name="username" required>
@@ -118,13 +160,29 @@
                     <label for="password">รหัสผ่าน</label>
                     <input type="password" id="password" name="password" required>
                 </div>
-                <button type="submit">เข้าสู่ระบบ</button>
+                <button type="submit" id="submitBtn" aria-busy="false">
+                    <span class="btn-text">เข้าสู่ระบบ</span>
+                    <span class="spinner" style="display: none;"></span>
+                </button>
             </form>
             <div class="link">
                 ยังไม่มีบัญชี? <a href="/web/register">สมัครสมาชิกที่นี่</a>
             </div>
         </div>
     </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            var submitBtn = document.getElementById('submitBtn');
+            var btnText = submitBtn.querySelector('.btn-text');
+            var spinner = submitBtn.querySelector('.spinner');
+
+            submitBtn.disabled = true;
+            submitBtn.setAttribute('aria-busy', 'true');
+            btnText.classList.add('visually-hidden');
+            spinner.style.display = 'inline-block';
+        });
+    </script>
 </body>
 
 </html>
