@@ -1,9 +1,34 @@
 <?php
 date_default_timezone_set('Asia/Bangkok');
-session_start();
 
-error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE);
-ini_set('display_errors', 'Off');
+if (PHP_SAPI == 'cli-server') {
+    $url = parse_url($_SERVER['REQUEST_URI']);
+    $file = __DIR__ . '/public' . $url['path'];
+    if (is_file($file)) {
+        return false;
+    }
+}
+
+// Session configuration
+ini_set('session.gc_maxlifetime', 86400);
+session_set_cookie_params([
+    'lifetime' => 86400,
+    'path' => '/',
+    'domain' => '',
+    'secure' => false,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Debug log for session persistence
+file_put_contents(__DIR__ . '/session_debug.log', date('[Y-m-d H:i:s] ') . "[SESSION] URI: " . $_SERVER['REQUEST_URI'] . " | SID: " . session_id() . " | User SET: " . (isset($_SESSION['user']) ? (is_object($_SESSION['user']) ? $_SESSION['user']->username : 'ARRAY') : 'NO') . "\n", FILE_APPEND);
+
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+ini_set('display_errors', 'On');
 
 use DI\Container;
 use Slim\Factory\AppFactory;
@@ -47,6 +72,13 @@ $app->addRoutingMiddleware();
 
 // Add Error Middleware
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
+
+// Custom 404 Error Handler
+$errorMiddleware->setErrorHandler(Slim\Exception\HttpNotFoundException::class, function ($request, $exception, $displayErrorDetails, $logErrors, $logErrorDetails) use ($app) {
+    $response = $app->getResponseFactory()->createResponse();
+    $view = $app->getContainer()->get('view');
+    return $view->render($response, '404.php')->withStatus(404);
+});
 
 // Register container itself for injection into legacy Managers
 $container->set('container', function () use ($container) {
