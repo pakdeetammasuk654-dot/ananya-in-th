@@ -1,0 +1,3 @@
+## 2024-07-25 - N+1 Query in dressColor
+**Learning:** The `dressColor` function in `app/Managers/userx/UserController.php` contained a classic N+1 query anti-pattern. It was iterating over a string of IDs and executing a separate database query for each ID inside the loop. This leads to a high number of small, inefficient queries, creating a significant bottleneck as the input string grows.
+**Action:** When fetching multiple records from the database based on a list of identifiers, I will consolidate the queries into a single call using an `IN` clause. This will avoid the N+1 problem and improve database performance.
