@@ -307,20 +307,23 @@ $app->group('/web', function (RouteCollectorProxy $group) use ($container) {
             $dir = __DIR__ . '/../public/uploads';
             $images = [];
 
-            if (is_dir($dir)) {
-                $files = scandir($dir);
-                foreach ($files as $f) {
-                    if ($f !== '.' && $f !== '..' && !is_dir("$dir/$f")) {
-                        if (preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $f)) {
-                            $images[] = [
-                                'name' => $f,
-                                'url' => '/uploads/' . $f,
-                                'size' => filesize("$dir/$f"),
-                                'time' => filemtime("$dir/$f")
-                            ];
-                        }
-                    }
-                }
+            // ⚡ Bolt: Optimized image loading to prevent N+1 I/O bottleneck.
+            // Using glob to find all images directly, reducing filesystem calls.
+            // The previous implementation used scandir() and then checked each file,
+            // resulting in excessive stat calls (filesize, filemtime) inside a loop.
+            // This is significantly faster for directories with many files.
+            // The glob pattern is expanded to be case-insensitive to match files with extensions like .JPG or .PNG.
+            $image_files = glob($dir . '/*.{jpg,JPG,jpeg,JPEG,png,PNG,gif,GIF,webp,WEBP}', GLOB_BRACE) ?: [];
+
+            foreach ($image_files as $file) {
+                // Using stat() is more efficient than calling filesize() and filemtime() separately.
+                $stat = stat($file);
+                $images[] = [
+                    'name' => basename($file),
+                    'url' => '/uploads/' . basename($file),
+                    'size' => $stat['size'],
+                    'time' => $stat['mtime']
+                ];
             }
             // Sort by Date (Newest first)
             usort($images, function ($a, $b) {
