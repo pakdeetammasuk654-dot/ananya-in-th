@@ -66,22 +66,29 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
-                }
-            }
+        // If the input is empty or not set, return an empty array.
+        if (empty($dayListStr)) {
+            $response->getBody()->write(json_encode(array('cloth_color' => [])));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+
+        // Create an array of unique color IDs from the input string.
+        $colorIds = array_unique(str_split($dayListStr));
+
+        // Create placeholders for the IN clause.
+        $placeholders = implode(',', array_fill(0, count($colorIds), '?'));
+
+        // Prepare the SQL statement with an IN clause.
+        // This is a single query to fetch all colors at once.
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+
+        $strColor = array();
+        if ($stmt) {
+            $stmt->execute($colorIds);
+            $strColor = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         }
 
         $response->getBody()->write(json_encode(array('cloth_color' => $strColor)));
