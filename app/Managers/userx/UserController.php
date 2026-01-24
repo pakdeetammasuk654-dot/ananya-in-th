@@ -66,21 +66,24 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
+        $strColor = array();
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
+        if (!empty($dayListStr)) {
+            // BOLT ⚡: Optimized from N+1 queries to a single query.
+            // Previously, this code executed one query for each day character.
+            // Now, it uses a single `IN` clause to fetch all colors at once,
+            // significantly reducing database load and improving performance.
+            // Expected impact: Reduces DB queries from N to 1, where N is the number of days.
+            $dayIds = array_unique(str_split($dayListStr));
+            $placeholders = implode(',', array_fill(0, count($dayIds), '?'));
+            $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+
             $result = $this->db->prepare($sql);
             if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
-                }
+                $result->execute($dayIds);
+                // Use fetchAll to get all results at once.
+                $strColor = $result->fetchAll(\PDO::FETCH_ASSOC);
             }
         }
 
