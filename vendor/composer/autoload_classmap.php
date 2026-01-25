@@ -18,7 +18,7 @@ return array(
     'App\\Managers\\NewsController' => $baseDir . '/app/Managers/news/NewsController.php',
     'App\\Managers\\NickNameController' => $baseDir . '/app/Managers/NickNameController.php',
     'App\\Managers\\NickNameVipController' => $baseDir . '/app/Managers/NickNameVipController.php',
-    'App\\Managers\\NotificationController' => $baseDir . '/app/Managers/NotificationController.php',
+    'App\\Managers\\NotificationController' => $baseDir . '/app/Managers/NotificationController_debug.php',
     'App\\Managers\\PersonController' => $baseDir . '/app/Managers/person/PersonController.php',
     'App\\Managers\\PersonManager' => $baseDir . '/app/Managers/person/PersonManager.php',
     'App\\Managers\\PhoneController' => $baseDir . '/app/Managers/PhoneController.php',
