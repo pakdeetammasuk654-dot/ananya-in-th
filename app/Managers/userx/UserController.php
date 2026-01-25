@@ -66,23 +66,23 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
-                }
-            }
+        // ⚡ Bolt: Optimized N+1 query.
+        // Replaced a loop of single queries with a single "IN" clause query to reduce database roundtrips.
+        // This is significantly more performant when the input string has multiple characters.
+        if (empty($dayListStr)) {
+            $response->getBody()->write(json_encode(array('cloth_color' => [])));
+            return $response->withHeader('Content-Type', 'application/json');
         }
+
+        $colorIds = str_split($dayListStr);
+        $placeholders = implode(',', array_fill(0, count($colorIds), '?'));
+
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($colorIds);
+        $strColor = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         $response->getBody()->write(json_encode(array('cloth_color' => $strColor)));
         return $response->withHeader('Content-Type', 'application/json');
