@@ -1,0 +1,5 @@
+## 2024-07-22 - Scandir N+1 I/O Bottleneck
+
+**Learning:** Identified a performance anti-pattern in the codebase where `scandir` is used to list files in a directory, followed by `filesize` and `filemtime` calls inside a loop for each file. This results in N+1 file system operations, causing a significant I/O bottleneck, especially as the number of files grows.
+
+**Action:** Replace this pattern with `glob` to retrieve the list of files. `glob` can often be more efficient as it can be combined with other operations to reduce the number of system calls. For instance, instead of calling `filesize` and `filemtime` separately for each file, I can use `stat` on each file found by `glob`. This will still be N calls, but it's a more direct approach than `scandir` followed by multiple stats per file. This will improve the performance of directory listing and file metadata retrieval.
