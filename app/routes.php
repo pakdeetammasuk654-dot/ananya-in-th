@@ -306,21 +306,18 @@ $app->group('/web', function (RouteCollectorProxy $group) use ($container) {
 
             $dir = __DIR__ . '/../public/uploads';
             $images = [];
+            // OPTIMIZATION: Use glob and stat to reduce system calls.
+            // This is much faster than scandir + multiple file info calls in a loop.
+            $image_files = glob($dir . '/*.{jpg,jpeg,png,gif,webp}', GLOB_BRACE) ?: [];
 
-            if (is_dir($dir)) {
-                $files = scandir($dir);
-                foreach ($files as $f) {
-                    if ($f !== '.' && $f !== '..' && !is_dir("$dir/$f")) {
-                        if (preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $f)) {
-                            $images[] = [
-                                'name' => $f,
-                                'url' => '/uploads/' . $f,
-                                'size' => filesize("$dir/$f"),
-                                'time' => filemtime("$dir/$f")
-                            ];
-                        }
-                    }
-                }
+            foreach ($image_files as $file) {
+                $stat = stat($file);
+                $images[] = [
+                    'name' => basename($file),
+                    'url' => '/uploads/' . basename($file),
+                    'size' => $stat['size'],
+                    'time' => $stat['mtime']
+                ];
             }
             // Sort by Date (Newest first)
             usort($images, function ($a, $b) {
