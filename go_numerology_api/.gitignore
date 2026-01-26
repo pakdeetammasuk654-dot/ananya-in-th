@@ -1,0 +1,8 @@
+# Compiled binary
+numerology_api
+
+# Log files
+*.log
+
+# Environment file
+.env
