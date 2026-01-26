@@ -71,16 +71,15 @@ class UserController extends Manager
         $dayListStr = $request->getAttribute('days');
         $numbDays = $dayListStr;
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
+        if (!empty($numbDays)) {
+            // BOLT ⚡: Optimized N+1 query. Previously, this function executed one query for each day.
+            // This has been changed to a single query using an IN clause, which is much more performant.
+            $placeholders = implode(',', array_fill(0, strlen($numbDays), '?'));
+            $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
             $result = $this->db->prepare($sql);
             if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
-                }
+                $result->execute(str_split($numbDays));
+                $strColor = $result->fetchAll(\PDO::FETCH_ASSOC);
             }
         }
 
