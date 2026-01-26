@@ -283,14 +283,36 @@
                         <div class="col">
                             <div class="form-group">
                                 <label class="form-label">หมวดหมู่ (Category)</label>
-                                <input type="text" name="category" class="form-control" list="cat-list"
-                                    value="<?php echo isset($article) ? htmlspecialchars($article->category) : ''; ?>">
-                                <datalist id="cat-list">
-                                    <option value="ทั่วไป">
-                                    <option value="ข่าวสาร">
-                                    <option value="โปรโมชั่น">
-                                    <option value="เคล็ดลับ">
-                                </datalist>
+                                <select name="category" class="form-control" required>
+                                    <option value="">-- เลือกหมวดหมู่ --</option>
+                                    <?php
+                                    // Fetch categories directly in view for simplicity (or pass from controller ideally)
+                                    // Ideally, $categories should be passed from Controller. If not, fallback fetch.
+                                    if (!isset($categories)) {
+                                        // Fallback for direct view rendering without controller passing it
+                                        global $container;
+                                        if (isset($container)) {
+                                            $stmt = $container->get('db')->query("SELECT * FROM news_categories ORDER BY sort_order ASC, category_name ASC");
+                                            $categories = $stmt->fetchAll(PDO::FETCH_OBJ);
+                                        }
+                                    }
+
+                                    $currentCat = isset($article) ? $article->category : '';
+                                    if (isset($categories) && is_array($categories)) {
+                                        foreach ($categories as $cat) {
+                                            $selected = ($currentCat == $cat->category_name) ? 'selected' : '';
+                                            echo "<option value=\"" . htmlspecialchars($cat->category_name) . "\" $selected>" . htmlspecialchars($cat->category_name) . "</option>";
+                                        }
+                                    } else {
+                                        // Fallback options if DB fetch fails
+                                        $defaults = ['ข่าวและบทความที่น่าสนใจ', 'Reviews และ Feedback จากประสบการณ์ลูกค้า', 'ความรู้และบทความเกี่ยวกับเบอร์โทรศัพท์', 'ชื่อและนามสกุลเสริมดวงชะตา', 'ศาสตร์ตัวเลขและทะเบียนรถมงคล', 'ทำนายดวงชะตาจากบ้านเลขที่', 'หลักการใช้และการเลือกเลขมงคลที่ถูกต้อง'];
+                                        foreach ($defaults as $d) {
+                                            $selected = ($currentCat == $d) ? 'selected' : '';
+                                            echo "<option value=\"$d\" $selected>$d</option>";
+                                        }
+                                    }
+                                    ?>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -376,22 +398,22 @@
             document.getElementById('imageModal').style.display = 'flex';
             fetchImages();
         }
-        
+
         function closeImageSelector() {
             document.getElementById('imageModal').style.display = 'none';
         }
-        
+
         function fetchImages() {
-             const grid = document.getElementById('imageGrid');
-             const loading = document.getElementById('loadingImages');
-             grid.innerHTML = '';
-             loading.style.display = 'block';
-             
-             fetch('/web/admin/api/images')
+            const grid = document.getElementById('imageGrid');
+            const loading = document.getElementById('loadingImages');
+            grid.innerHTML = '';
+            loading.style.display = 'block';
+
+            fetch('/web/admin/api/images')
                 .then(res => res.json())
                 .then(files => {
                     loading.style.display = 'none';
-                    if(!files || files.length === 0) {
+                    if (!files || files.length === 0) {
                         grid.innerHTML = '<p style="text-align:center; width:100%; color:#888;">No images found in public/uploads</p>';
                         return;
                     }
@@ -399,10 +421,10 @@
                         const item = document.createElement('div');
                         item.className = 'image-item';
                         item.onclick = () => selectImage(file);
-                        
+
                         // Assuming running from root, path is /uploads/
                         const imgPath = '/uploads/' + file;
-                        
+
                         item.innerHTML = `<img src="${imgPath}" loading="lazy"><div class="image-name">${file}</div>`;
                         grid.appendChild(item);
                     });
@@ -413,17 +435,17 @@
                     console.error(err);
                 });
         }
-        
+
         function selectImage(filename) {
             // Update the input field
             const fullPath = '/uploads/' + filename;
             document.getElementById('image_url').value = fullPath;
             closeImageSelector();
         }
-        
+
         // Close modal if clicked outside
-        document.getElementById('imageModal').onclick = function(e) {
-            if(e.target === this) {
+        document.getElementById('imageModal').onclick = function (e) {
+            if (e.target === this) {
                 closeImageSelector();
             }
         }

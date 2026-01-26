@@ -1,7 +1,4 @@
 <?php
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 $is_logged_in = isset($_SESSION['user']);
 
 use App\Managers\ThaiCalendarHelper;
@@ -179,10 +176,14 @@ if ($is_wanpra_today) {
         <a href="/" class="navbar-link"><i class="fa-solid fa-house"></i> <span>หน้าแรก</span></a>
         <a href="/articles" class="navbar-link"><i class="fa-solid fa-newspaper"></i> <span>บทความ</span></a>
         <a href="/services" class="navbar-link"><i class="fa-solid fa-list-check"></i> <span>ข้อปฏิบัติ</span></a>
-        <a href="/lucky/number" class="navbar-link"><i class="fa-solid fa-star"></i> <span>เลขนำโชค</span></a>
+
+        <a href="/web/auspicious-list" class="navbar-link"><i class="fa-solid fa-calendar-check"></i>
+            <span>ปฏิทินวันมงคล</span></a>
         <a href="#" class="navbar-link"><i class="fa-solid fa-info-circle"></i> <span>เกี่ยวกับเรา</span></a>
 
         <?php if ($is_logged_in): ?>
+            <a href="/web/admin/spells" class="navbar-link" style="color: #FFD700;"><i class="fa-solid fa-scroll"></i>
+                <span>คาถา/คำเตือน</span></a>
             <a href="/web/dashboard" class="navbar-link" style="color: #FFD700;"><i class="fa-solid fa-user-circle"></i>
                 <span>แดชบอร์ด</span></a>
             <a href="/web/logout" class="navbar-link" style="color: #ffcccc;"><i class="fa-solid fa-sign-out-alt"></i>

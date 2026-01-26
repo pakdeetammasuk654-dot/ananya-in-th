@@ -326,7 +326,8 @@
             <div class="flex-between mb-4">
                 <div>
                     <h1 style="display:inline-block;" class="mr-3">จัดการสีกระเป๋า:
-                        <?= htmlspecialchars($targetUser->realname) ?> (ID: <?= $targetUser->memberid ?>)</h1>
+                        <?= htmlspecialchars($targetUser->realname) ?> (ID: <?= $targetUser->memberid ?>)
+                    </h1>
                     <button onclick="sendNotification()" class="btn btn-sm btn-purple">
                         🔔 Send Notification
                     </button>
@@ -423,6 +424,7 @@
                         <tr>
                             <th>Age</th>
                             <th>Colors (1-6)</th>
+                            <th>บันทึกล่าสุด</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -451,6 +453,12 @@
                                             style="background-color: <?= !empty($bag->bag_color6) ? $bag->bag_color6 : '#FFFFFF' ?>"
                                             title="6: <?= $bag->bag_color6 ?>"></div>
                                     </div>
+                                </td>
+                                <td>
+                                    <span
+                                        class="text-sm <?= empty($bag->date_color_updated) ? 'text-gray italic' : 'font-bold text-blue' ?>">
+                                        <?= !empty($bag->date_color_updated) ? htmlspecialchars($bag->date_color_updated) : 'ยังไม่ update' ?>
+                                    </span>
                                 </td>
                                 <td>
                                     <button

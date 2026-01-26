@@ -107,6 +107,7 @@
         <a href="/web/dashboard" class="btn btn-back">← กลับหน้าหลัก</a>
         <div class="card">
             <h2>จัดการผู้ใช้ระบบ</h2>
+            <?php include 'web_admin_toolbar.php'; ?>
             <table>
                 <thead>
                     <tr>

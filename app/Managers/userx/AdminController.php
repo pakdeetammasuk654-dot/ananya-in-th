@@ -81,7 +81,9 @@ class AdminController extends Manager
 
         if ($photo1 != "") {
             $imageName = time();//or Anything You Need
-            $path = 'public/photo/' . $imageName . ".png";
+            $path = PHOTO_DIR . '/' . $imageName . ".png";
+            if (!is_dir(PHOTO_DIR))
+                mkdir(PHOTO_DIR, 0777, true);
             $status = file_put_contents($path, base64_decode($photo1));
 
             if ($status) {
@@ -91,7 +93,9 @@ class AdminController extends Manager
 
         if ($photo2 != "") {
             $imageName = time() + 1;//or Anything You Need
-            $path = 'public/photo/' . $imageName . ".png";
+            $path = PHOTO_DIR . '/' . $imageName . ".png";
+            if (!is_dir(PHOTO_DIR))
+                mkdir(PHOTO_DIR, 0777, true);
             $status = file_put_contents($path, base64_decode($photo2));
 
             if ($status) {
@@ -101,7 +105,9 @@ class AdminController extends Manager
 
         if ($photo3 != "") {
             $imageName = time() + 2;//or Anything You Need
-            $path = 'public/photo/' . $imageName . ".png";
+            $path = PHOTO_DIR . '/' . $imageName . ".png";
+            if (!is_dir(PHOTO_DIR))
+                mkdir(PHOTO_DIR, 0777, true);
             $status = file_put_contents($path, base64_decode($photo3));
 
             if ($status) {
@@ -178,7 +184,9 @@ class AdminController extends Manager
 
         if ($photo1 != "") {
             $imageName = time();//or Anything You Need
-            $path = 'public/photo/' . $imageName . ".png";
+            $path = PHOTO_DIR . '/' . $imageName . ".png";
+            if (!is_dir(PHOTO_DIR))
+                mkdir(PHOTO_DIR, 0777, true);
             $status = file_put_contents($path, base64_decode($photo1));
 
             if ($status) {
@@ -188,7 +196,9 @@ class AdminController extends Manager
 
         if ($photo2 != "") {
             $imageName = time() + 1;//or Anything You Need
-            $path = 'public/photo/' . $imageName . ".png";
+            $path = PHOTO_DIR . '/' . $imageName . ".png";
+            if (!is_dir(PHOTO_DIR))
+                mkdir(PHOTO_DIR, 0777, true);
             $status = file_put_contents($path, base64_decode($photo2));
 
             if ($status) {
@@ -198,7 +208,9 @@ class AdminController extends Manager
 
         if ($photo3 != "") {
             $imageName = time() + 2;//or Anything You Need
-            $path = 'public/photo/' . $imageName . ".png";
+            $path = PHOTO_DIR . '/' . $imageName . ".png";
+            if (!is_dir(PHOTO_DIR))
+                mkdir(PHOTO_DIR, 0777, true);
             $status = file_put_contents($path, base64_decode($photo3));
 
             if ($status) {
@@ -259,7 +271,9 @@ class AdminController extends Manager
         $body = $request->getParsedBody();
         $base64Img = filter_var($body['base64Img'], FILTER_SANITIZE_STRING);
         $image_no = time();//or Anything You Need
-        $path = 'public/photo/' . $image_no . ".png";
+        $path = PHOTO_DIR . '/' . $image_no . ".png";
+        if (!is_dir(PHOTO_DIR))
+            mkdir(PHOTO_DIR, 0777, true);
 
         $status = file_put_contents($path, base64_decode($base64Img));
 
@@ -303,7 +317,7 @@ class AdminController extends Manager
         if ($result->execute()) {
             $userId = $result->fetch(\PDO::FETCH_OBJ);
 
-            $sql = "UPDATE bagcolortb SET bagcolortb.age = '$age1', bagcolortb.bag_color1 = '$bagColor1a', bagcolortb.bag_color2 = '$bagColor2a', bagcolortb.bag_color3 = '$bagColor3a', bagcolortb.bag_color4 = '$bagColor4a', bagcolortb.bag_color5 = '$bagColor5a', bagcolortb.bag_color6 = '$bagColor6a' WHERE bagcolortb.bag_id = '$userId->bag_id'";
+            $sql = "UPDATE bagcolortb SET bagcolortb.age = '$age1', bagcolortb.bag_color1 = '$bagColor1a', bagcolortb.bag_color2 = '$bagColor2a', bagcolortb.bag_color3 = '$bagColor3a', bagcolortb.bag_color4 = '$bagColor4a', bagcolortb.bag_color5 = '$bagColor5a', bagcolortb.bag_color6 = '$bagColor6a', bagcolortb.date_color_updated = NOW() WHERE bagcolortb.bag_id = '$userId->bag_id'";
             $result = $this->db->prepare($sql);
             if ($result->execute()) {
                 $successUpdateColorA = true;
@@ -316,7 +330,7 @@ class AdminController extends Manager
         if ($result->execute()) {
             $userId = $result->fetch(\PDO::FETCH_OBJ);
 
-            $sql = "UPDATE bagcolortb SET bagcolortb.age = '$age2', bagcolortb.bag_color1 = '$bagColor1b', bagcolortb.bag_color2 = '$bagColor2b', bagcolortb.bag_color3 = '$bagColor3b', bagcolortb.bag_color4 = '$bagColor4b', bagcolortb.bag_color5 = '$bagColor5b', bagcolortb.bag_color6 = '$bagColor6b' WHERE bagcolortb.bag_id = '$userId->bag_id'";
+            $sql = "UPDATE bagcolortb SET bagcolortb.age = '$age2', bagcolortb.bag_color1 = '$bagColor1b', bagcolortb.bag_color2 = '$bagColor2b', bagcolortb.bag_color3 = '$bagColor3b', bagcolortb.bag_color4 = '$bagColor4b', bagcolortb.bag_color5 = '$bagColor5b', bagcolortb.bag_color6 = '$bagColor6b', bagcolortb.date_color_updated = NOW() WHERE bagcolortb.bag_id = '$userId->bag_id'";
             $result = $this->db->prepare($sql);
             if ($result->execute()) {
                 $successUpdateColorB = true;
@@ -345,7 +359,7 @@ class AdminController extends Manager
         $successColor = false;
 
 
-        $sql = "INSERT INTO bagcolortb (bagcolortb.memberid, bagcolortb.age, bagcolortb.bag_color1, bagcolortb.bag_color2, bagcolortb.bag_color3, bagcolortb.bag_color4, bagcolortb.bag_color5, bagcolortb.bag_color6) VALUES ('$memberid', '$age', '$bagColor1a', '$bagColor2a','$bagColor3a', '$bagColor4a', '$bagColor5a', '$bagColor6a')";
+        $sql = "INSERT INTO bagcolortb (bagcolortb.memberid, bagcolortb.age, bagcolortb.bag_color1, bagcolortb.bag_color2, bagcolortb.bag_color3, bagcolortb.bag_color4, bagcolortb.bag_color5, bagcolortb.bag_color6, bagcolortb.date_color_updated) VALUES ('$memberid', '$age', '$bagColor1a', '$bagColor2a','$bagColor3a', '$bagColor4a', '$bagColor5a', '$bagColor6a', NOW())";
 
         $result = $this->db->prepare($sql);
         if ($result->execute()) {
@@ -401,15 +415,15 @@ class AdminController extends Manager
 
         if (empty($username)) {
             // Return latest 50 users
-            $sql = "SELECT memberid, username, realname, surname, birthday 
+            $sql = "SELECT memberid, username, realname, surname, birthday, fcm_token 
                     FROM membertb 
                     ORDER BY memberid DESC 
-                    LIMIT 50";
+                    LIMIT 20";
             $result = $this->db->prepare($sql);
             $result->execute();
         } else {
             // Search by username, realname, surname, or memberid with relevance
-            $sql = "SELECT memberid, username, realname, surname, birthday,
+            $sql = "SELECT memberid, username, realname, surname, birthday, fcm_token,
                     (CASE 
                         WHEN username = :exact THEN 1
                         WHEN username LIKE :start THEN 2
@@ -424,7 +438,7 @@ class AdminController extends Manager
                        OR surname LIKE :query 
                        OR memberid LIKE :query
                     ORDER BY relevance ASC, memberid DESC 
-                    LIMIT 50";
+                    LIMIT 20";
             $result = $this->db->prepare($sql);
             $result->execute([
                 ':query' => "%$username%",
@@ -442,7 +456,8 @@ class AdminController extends Manager
                 'username' => $user->username,
                 'realname' => $user->realname ?? '',
                 'surname' => $user->surname ?? '',
-                'birthday' => $user->birthday ?? ''
+                'birthday' => $user->birthday ?? '',
+                'fcm_token' => $user->fcm_token ?? ''
             ];
         }, $data);
 
@@ -638,11 +653,14 @@ class AdminController extends Manager
         }
 
         $image_name = 'art_' . time() . '.jpg';
-        $path = 'public/uploads/' . $image_name;
+        $path = UPLOAD_DIR . '/' . $image_name;
 
         // Ensure directory exists
-        if (!is_dir('public/uploads')) {
-            mkdir('public/uploads', 0755, true);
+        if (!is_dir(UPLOAD_DIR)) {
+            mkdir(UPLOAD_DIR, 0777, true);
+        }
+        if (!is_writable(UPLOAD_DIR)) {
+            chmod(UPLOAD_DIR, 0777);
         }
 
         $status = file_put_contents($path, base64_decode($base64Img));

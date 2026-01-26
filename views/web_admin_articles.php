@@ -155,6 +155,7 @@
                 </a>
             </div>
             <div class="card-body">
+                <?php include 'web_admin_toolbar.php'; ?>
                 <div class="action-bar">
                     <div><strong>รายการบทความทั้งหมด</strong> (<?php echo count($articles); ?>)</div>
                     <a href="/web/admin/articles/create" class="btn btn-primary">+ เขียนบทความใหม่</a>

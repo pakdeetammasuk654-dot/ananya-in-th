@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Image Library - Ananya</title>
     <style>
         body {
@@ -183,8 +186,8 @@
         </div>
 
         <script>
-            document.getElementById('fileInput').addEventListener('change', function  ( ) {
-                 if (this.files && this.files.length >  0) {
+            document.getElementById('fileInput').addEventListener('change', function () {
+                if (this.files && this.files.length > 0) {
                     document.getElementById('fileName').innerText = 'Selected: ' + this.files[0].name;
                 }
             });
@@ -238,14 +241,14 @@
     <script>
         function copyToClipboard(text) {
             // Ensure path is absolute if needed, but relative /uploads/ is usually best for portability
-            navigator.clipboard.writeText(text).then(func tion () {
+            navigator.clipboard.writeText(text).then(function () {
                 const toast = document.getElementById('toast');
                 toast.style.opacity = '1';
                 setTimeout(() => { toast.style.opacity = '0'; }, 2000);
-            }, fun ction (err) {
+            }, function (err) {
                 console.error('Async: Could not copy text: ', err);
             });
-    }
+        }
     </script>
 </body>
 

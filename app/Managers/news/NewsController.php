@@ -14,14 +14,17 @@ class NewsController extends Manager
 
     public function getLuckyNumber($request, $response)
     {
-        // 1. Check if we have manual numbers for today in V2 table
-        $today = date('Y-m-d');
-        $sqlV2 = "SELECT * FROM luckynumber_v2 WHERE lucky_date = :today";
+        // 1. Fetch the latest entry from luckynumber_v2 (Ordered by date)
+        $sqlV2 = "SELECT * FROM luckynumber_v2 ORDER BY lucky_date DESC LIMIT 1";
         $stmtV2 = $this->db->prepare($sqlV2);
-        $stmtV2->execute([':today' => $today]);
+        $stmtV2->execute();
         $manual = $stmtV2->fetch(\PDO::FETCH_ASSOC);
 
+        $lucky_date = '';
+        $numbers_str = '';
+
         if ($manual) {
+            $lucky_date = $manual['lucky_date'];
             $lucky_numbers = [];
             for ($i = 1; $i <= 6; $i++) {
                 if (!empty($manual["num$i"])) {
@@ -30,25 +33,14 @@ class NewsController extends Manager
             }
             $numbers_str = implode(' ', $lucky_numbers);
         } else {
-            // 2. Fallback to random logic if no manual numbers
-            $now = time();
-            $offset = 9 * 3600; // 9ชั่วโมง
-            $seed = (int) date('Ymd', $now - $offset);
-
-            $sql = "SELECT pairnumber FROM numbers WHERE pairtype IN ('D10', 'D8', 'D5') ORDER BY RAND($seed) LIMIT 6";
-            $result = $this->db->prepare($sql);
-            $result->execute();
-            $rows = $result->fetchAll(\PDO::FETCH_OBJ);
-
-            $lucky_numbers = [];
-            foreach ($rows as $row) {
-                $lucky_numbers[] = $row->pairnumber;
-            }
-            $numbers_str = implode(' ', $lucky_numbers);
+            // No record found in V2 - Do NOT fallback to V1 or auto-generate
+            // Return empty to indicate no lucky number set by admin
+            $lucky_date = "";
+            $numbers_str = "";
         }
 
         $vars = [
-            'lucky_date' => $today,
+            'lucky_date' => $lucky_date,
             'numbers' => $numbers_str,
             'active' => '1'
         ];
@@ -59,7 +51,7 @@ class NewsController extends Manager
             return $this->view->render($response, 'lucky_number.phtml', $vars);
         }
 
-        $data = json_encode(array('lucky_date' => $today, 'numbers' => $numbers_str, 'active' => '1'));
+        $data = json_encode(array('lucky_date' => $lucky_date, 'numbers' => $numbers_str, 'active' => '1'));
         $response->getBody()->write($data);
         return $response->withHeader('Content-Type', 'application/json');
     }
@@ -138,27 +130,109 @@ class NewsController extends Manager
     public function newsTypeAll($req, $res)
     {
         $newsIdType = $req->getAttribute('newsidtype');
+
+        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
+        $host = $protocol . "://" . $_SERVER['HTTP_HOST'];
+
+        // Force UTF-8 for Thai characters
+        $this->db->exec("SET NAMES utf8");
+
+        $mapArticle = $this->_getMapArticleCallback($host);
+
         if ($newsIdType != null && $newsIdType != '') {
-            // ดึงบทความจาก articles เพื่อให้สอดคล้องกันทั้งแอป
-            $sql = "SELECT art_id as newsid, image_url as news_pic_header, title as news_headline, excerpt as news_desc 
-                    FROM articles 
-                    WHERE is_published = 1 
-                    ORDER BY pin_order DESC, published_at DESC LIMIT 50";
+            // Fetch dynamic category name
+            $catId = 0;
+            $defaultName = "ทั่วไป";
+
+            switch ($newsIdType) {
+                case "0":
+                    $catId = 7;
+                    $defaultName = 'ข่าวและบทความที่น่าสนใจ';
+                    break;
+                case "1":
+                    $catId = 1;
+                    $defaultName = 'Review จากลูกค้า';
+                    break;
+                case "2":
+                    $catId = 2;
+                    $defaultName = 'วิธีเลือกซื้อเบอร์โทรศัพท์มงคล';
+                    break;
+                case "3":
+                    $catId = 3;
+                    $defaultName = 'ทำนายดวงชะตาจากชื่อ-สกุล';
+                    break;
+                case "4":
+                    $catId = 4;
+                    $defaultName = 'ทำนายดวงชะตาจากทะเบียนรถ';
+                    break;
+                case "5":
+                    $catId = 5;
+                    $defaultName = 'ทำนายดวงชะตาจากบ้านเลขที่';
+                    break;
+                case "6":
+                    $catId = 6;
+                    $defaultName = 'หลักการใช้เลขมงคล';
+                    break;
+            }
+
+            $catStmt = $this->db->prepare("SELECT category_name FROM news_categories WHERE category_id = :id");
+            $catStmt->execute([':id' => $catId]);
+            $fetchedName = $catStmt->fetchColumn();
+            $categoryName = $fetchedName ? $fetchedName : $defaultName;
+
+            $sql = "";
+            switch ($newsIdType) {
+                case "0":
+                    $sql = "SELECT * FROM news WHERE fix IN ('1', '2', '3', '4', '5') ORDER BY fix ASC LIMIT 100";
+                    break;
+                case "1":
+                    $sql = "SELECT * FROM news WHERE hashtag1 = 1 ORDER BY newsid DESC LIMIT 100";
+                    break;
+                case "2":
+                    $sql = "SELECT * FROM news WHERE hashtag2 = 1 ORDER BY newsid DESC LIMIT 100";
+                    break;
+                case "3":
+                    $sql = "SELECT * FROM news WHERE hashtag3 = 1 ORDER BY newsid DESC LIMIT 100";
+                    break;
+                case "4":
+                    $sql = "SELECT * FROM news WHERE hashtag4 = 1 ORDER BY newsid DESC LIMIT 100";
+                    break;
+                case "5":
+                    $sql = "SELECT * FROM news WHERE hashtag5 = 1 ORDER BY newsid DESC LIMIT 100";
+                    break;
+                case "6":
+                    $sql = "SELECT * FROM news WHERE hashtag6 = 1 ORDER BY newsid DESC LIMIT 100";
+                    break;
+                default:
+                    $sql = "SELECT * FROM news WHERE 1=0";
+                    break;
+            }
 
             $result = $this->db->prepare($sql);
             $result->execute();
-            $data = $result->fetchAll(\PDO::FETCH_ASSOC);
+            $dataRaw = $result->fetchAll(\PDO::FETCH_ASSOC);
 
-            $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
-            $host = $protocol . "://" . $_SERVER['HTTP_HOST'];
-            foreach ($data as &$art) {
-                if (!empty($art['news_pic_header']) && strpos($art['news_pic_header'], 'http') !== 0) {
-                    $path = ltrim($art['news_pic_header'], '/');
-                    $art['news_pic_header'] = $host . '/' . $path;
+            // Deduplicate in PHP
+            $dataRawUnique = [];
+            $seenHeadlines = [];
+            foreach ($dataRaw as $r) {
+                $h = $r['news_headline'];
+                if (!in_array($h, $seenHeadlines)) {
+                    $seenHeadlines[] = $h;
+                    $dataRawUnique[] = $r;
                 }
+                if (count($dataRawUnique) >= 50)
+                    break; // Limit to 50 unique items
             }
 
-            $json = json_encode(array("type_id" => "$newsIdType", "news_all_type" => $data));
+            // Inject category name explicitly
+            $dataWithCat = [];
+            foreach ($dataRawUnique as $r) {
+                $r['category_name'] = $categoryName;
+                $dataWithCat[] = $mapArticle($r);
+            }
+
+            $json = json_encode(array("type_id" => "$newsIdType", "news_all_type" => $dataWithCat));
             $res->getBody()->write($json);
             return $res->withHeader('Content-Type', 'application/json');
         }
@@ -167,33 +241,88 @@ class NewsController extends Manager
 
     public function newsTop24($request, $response)
     {
-        // แผนเดิมดึงจากตาราง 'news' แต่คุณต้องการให้ดึงจาก 'articles' ที่จัดการผ่านเว็บได้
-        // เพื่อให้ Android ทำงานต่อได้โดยไม่ต้องแก้ Model เราจะดัดแปลงข้อมูลให้เข้ากับ JSON เดิม
-        $sql = "SELECT art_id as newsid, image_url as news_pic_header, title as news_headline, title_short as news_title_short, excerpt as news_desc, category 
-                FROM articles 
-                WHERE is_published = 1 
-                ORDER BY pin_order DESC, art_id DESC LIMIT 20";
-        $result = $this->db->prepare($sql);
-        $result->execute();
-        $articles = $result->fetchAll(\PDO::FETCH_ASSOC);
-
         $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
         $host = $protocol . "://" . $_SERVER['HTTP_HOST'];
-        foreach ($articles as &$art) {
-            if (!empty($art['news_pic_header']) && strpos($art['news_pic_header'], 'http') !== 0) {
-                $path = ltrim($art['news_pic_header'], '/');
-                $art['news_pic_header'] = $host . '/' . $path;
-            }
-        }
 
-        // แยกข้อมูลให้ตรงกับหัวข้อใน App พัฒนาตามโครงสร้างเดิม
-        $dataHot = array_slice($articles, 0, 7); // ใช้ 7 บทความแรกสำหรับหน้า Portal ใหม่
-        $dataFeedback = array_slice($articles, 0, 4);
-        $dataPhoneNum = array_slice($articles, 0, 4);
-        $dataNameSur = array_slice($articles, 0, 4);
-        $dataTabian = array_slice($articles, 0, 4);
-        $dataHomeNum = array_slice($articles, 0, 4);
-        $dataConcept = array_slice($articles, 0, 4);
+        // Force UTF-8 for Thai characters
+        $this->db->exec("SET NAMES utf8");
+
+        $mapArticle = $this->_getMapArticleCallback($host);
+
+        // Fetch All Category Names
+        $catStmt = $this->db->query("SELECT category_id, category_name FROM news_categories");
+        $categories = $catStmt->fetchAll(\PDO::FETCH_KEY_PAIR); // [1 => 'Name', ...]
+
+        // Helper for deduplication
+        $processCategory = function ($sql, $limit, $catName) use ($mapArticle) {
+            $stmt = $this->db->query($sql);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $uniqueData = [];
+            $seen = [];
+            foreach ($rows as $r) {
+                if (!in_array($r['news_headline'], $seen)) {
+                    $seen[] = $r['news_headline'];
+                    $r['category_name'] = $catName;
+                    $uniqueData[] = $mapArticle($r);
+                }
+                if (count($uniqueData) >= $limit)
+                    break;
+            }
+            return $uniqueData;
+        };
+
+        // Select only necessary columns to Improve Performance (Avoid fetching full HTML body)
+        // Adjust column names if they differ in your specific DB version, but these are standard based on code.
+        $cols = "newsid, news_headline, news_pic_header, news_title_short, news_desc, news_date, category, fix, hashtag1, hashtag2, hashtag3, hashtag4, hashtag5, hashtag6, LEFT(news_detail, 300) as news_detail";
+
+        // 1. Hot News (Latest 7) - Check 'fix' flag
+        $dataHot = $processCategory(
+            "SELECT $cols FROM news WHERE fix IN ('1', '2', '3', '4', '5') ORDER BY fix ASC LIMIT 20",
+            7,
+            $categories[7] ?? 'ข่าวและบทความที่น่าสนใจ'
+        );
+
+        // 2. Feedback - Check hashtag1 (Category 1)
+        $dataFeedback = $processCategory(
+            "SELECT $cols FROM news WHERE hashtag1 = 1 ORDER BY newsid DESC LIMIT 20",
+            4,
+            $categories[1] ?? 'Review จากลูกค้า'
+        );
+
+        // 3. Phone - hashtag2 (Category 2)
+        $dataPhoneNum = $processCategory(
+            "SELECT $cols FROM news WHERE hashtag2 = 1 ORDER BY newsid DESC LIMIT 20",
+            4,
+            $categories[2] ?? 'วิธีเลือกซื้อเบอร์โทรศัพท์มงคล'
+        );
+
+        // 4. NameSur - hashtag3 (Category 3)
+        $dataNameSur = $processCategory(
+            "SELECT $cols FROM news WHERE hashtag3 = 1 ORDER BY newsid DESC LIMIT 20",
+            4,
+            $categories[3] ?? 'ทำนายดวงชะตาจากชื่อ-สกุล'
+        );
+
+        // 5. Tabian - hashtag4 (Category 4)
+        $dataTabian = $processCategory(
+            "SELECT $cols FROM news WHERE hashtag4 = 1 ORDER BY newsid DESC LIMIT 20",
+            4,
+            $categories[4] ?? 'ทำนายดวงชะตาจากทะเบียนรถ'
+        );
+
+        // 6. Home - hashtag5 (Category 5)
+        $dataHomeNum = $processCategory(
+            "SELECT $cols FROM news WHERE hashtag5 = 1 ORDER BY newsid DESC LIMIT 20",
+            4,
+            $categories[5] ?? 'ทำนายดวงชะตาจากบ้านเลขที่'
+        );
+
+        // 7. Concept - hashtag6 (Category 6)
+        $dataConcept = $processCategory(
+            "SELECT $cols FROM news WHERE hashtag6 = 1 ORDER BY newsid DESC LIMIT 20",
+            4,
+            $categories[6] ?? 'หลักการเลือกทะเบียนรถ'
+        );
 
         $data = json_encode(array(
             "news_hot" => $dataHot,
@@ -204,26 +333,69 @@ class NewsController extends Manager
             "news_homenum" => $dataHomeNum,
             "news_concept" => $dataConcept
         ));
+
         $response->getBody()->write($data);
         return $response->withHeader('Content-Type', 'application/json');
     }
 
+    // Helper function for mapping
+    private function _getMapArticleCallback($host)
+    {
+        return function ($article) use ($host) {
+            // Robust check for keys
+            $id = $article['newsid'] ?? $article['news_id'] ?? $article['id'] ?? $article['ID'] ?? '';
+            $headline = $article['news_headline'] ?? $article['news_topic'] ?? $article['topic'] ?? $article['news_header'] ?? $article['head_text'] ?? $article['title'] ?? $article['name'] ?? $article['subject'] ?? '';
+            $short = $article['news_title_short'] ?? $article['news_short'] ?? $headline;
+            $desc = $article['news_desc'] ?? $article['intro'] ?? $article['description'] ?? $article['excerpt'] ?? mb_substr(strip_tags($article['news_detail'] ?? $article['detail'] ?? $article['content'] ?? $article['body'] ?? ''), 0, 100);
+            $img = $article['news_pic_header'] ?? $article['news_picture'] ?? $article['photo'] ?? $article['photo1'] ?? $article['cover'] ?? $article['image'] ?? $article['img'] ?? $article['file_name'] ?? $article['url'] ?? '';
+            $date = $article['news_date'] ?? $article['created_at'] ?? $article['date'] ?? $article['published_at'] ?? '';
+            $cat = $article['category_name'] ?? $article['category'] ?? 'ทั่วไป';
+
+            if (!empty($img) && strpos($img, 'http') !== 0) {
+                $img = $host . '/' . ltrim($img, '/');
+            }
+            return [
+                'newsid' => $id,
+                'news_headline' => $headline,
+                'news_title_short' => $short,
+                'news_desc' => $desc,
+                'news_pic_header' => $img,
+                'news_date' => $date,
+                'category' => $cat
+            ];
+        };
+    }
+
     public function newsNumberViewDetail($request, $response)
     {
-        $art_id = $request->getAttribute('number');
-        $sql = "SELECT * FROM articles WHERE art_id = :id";
+        $newsid = $request->getAttribute('number');
+        $sql = "SELECT * FROM news WHERE newsid = :id";
+
+        $this->db->exec("SET NAMES utf8"); // Ensure Vew Detail is also UTF8
 
         $result = $this->db->prepare($sql);
-        $result->execute([':id' => $art_id]);
-        $article = $result->fetch(\PDO::FETCH_OBJ);
+        $result->execute([':id' => $newsid]);
+        $data = $result->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$article) {
-            return $response->withHeader('Location', '/articles')->withStatus(302);
+        if (!$data) {
+            $response->getBody()->write(json_encode(['error' => 'News not found']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
         }
 
-        return $this->view->render($response, 'web_article_detail.php', [
-            'article' => $article
-        ]);
+        // Fix Image Path for View
+        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
+        $host = $protocol . "://" . $_SERVER['HTTP_HOST'];
+        if (!empty($data['news_pic_header']) && strpos($data['news_pic_header'], 'http') !== 0) {
+            $path = ltrim($data['news_pic_header'], '/');
+            $data['news_pic_header'] = $host . '/' . $path;
+        }
+
+        // Map fields if necessary, or return data directly if columns match serialization
+        // Android expects: news_detail, news_header, news_pic_header, etc.
+        // Assuming table columns match these names (as implied by _getMapArticleCallback)
+
+        $response->getBody()->write(json_encode($data));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
     public function getArticleJson($request, $response)
@@ -236,7 +408,7 @@ class NewsController extends Manager
                        excerpt as news_desc, 
                        content as news_detail,
                        category,
-                       published_at
+                       published_at as news_date
                 FROM articles 
                 WHERE art_id = :id AND is_published = 1";
 

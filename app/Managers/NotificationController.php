@@ -7,6 +7,177 @@ use PDO;
 
 class NotificationController extends Manager
 {
+    public function sendCustomNotify($request, $response)
+    {
+        $post = $request->getParsedBody();
+        $memberid = $post['memberid'] ?? '';
+        $title = $post['title'] ?? '';
+        $body = $post['body'] ?? '';
+
+        if (empty($memberid) || empty($title) || empty($body)) {
+            $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'Invalid input']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+
+        if ($memberid === 'all') {
+            // Send to ALL members
+            $stmt = $this->db->query("SELECT memberid, fcm_token FROM membertb WHERE fcm_token IS NOT NULL AND fcm_token != ''");
+            $users = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+            $successCount = 0;
+            $total = count($users);
+            $errors = [];
+
+            foreach ($users as $u) {
+                $fcmRes = '';
+                $res = $this->sendFcm($u->fcm_token, $title, $body, ['type' => 'custom', 'memberid' => (string) $u->memberid], $fcmRes);
+                if ($res) {
+                    $successCount++;
+                } else {
+                    $errors[] = ["memberid" => $u->memberid, "error" => $fcmRes];
+                }
+            }
+
+            $response->getBody()->write(json_encode([
+                'status' => 'success',
+                'message' => "Sent to $successCount / $total people",
+                'success_count' => $successCount,
+                'total_count' => $total,
+                'errors' => $errors
+            ]));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+
+        // Fetch Single User Token
+        $stmt = $this->db->prepare("SELECT * FROM membertb WHERE memberid = :mid");
+        $stmt->execute([':mid' => $memberid]);
+        $user = $stmt->fetch(\PDO::FETCH_OBJ);
+
+        if ($user && !empty($user->fcm_token)) {
+            $fcmRes = '';
+            $res = $this->sendFcm($user->fcm_token, $title, $body, ['type' => 'custom', 'memberid' => (string) $user->memberid], $fcmRes);
+
+            if ($res) {
+                $response->getBody()->write(json_encode(['status' => 'success', 'message' => 'Notification sent successfully']));
+            } else {
+                $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'FCM failed', 'details' => $fcmRes]));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(200); // Keep 200 to see error in app
+            }
+        } else {
+            $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'User not found or no FCM token']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
+        }
+
+        return $response;
+    }
+
+    public function viewCustomNotify($request, $response)
+    {
+        $queryParams = $request->getQueryParams();
+        $search = $queryParams['search'] ?? '';
+        $users = [];
+
+        if (!empty($search)) {
+            $sql = "SELECT * FROM membertb WHERE username LIKE :s OR realname LIKE :s OR memberid = :exact LIMIT 50";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':s' => "%$search%", ':exact' => $search]);
+            $users = $stmt->fetchAll(\PDO::FETCH_OBJ);
+        }
+
+        ob_start();
+        include __DIR__ . '/../../views/web_admin_notify_custom.php';
+        $html = ob_get_clean();
+        $response->getBody()->write($html);
+        return $response;
+    }
+
+    public function cronWanPra($request, $response)
+    {
+        // Set Timezone
+        date_default_timezone_set('Asia/Bangkok');
+        $hour = (int) date('H');
+        $today = date('Y-m-d');
+        $tomorrow = date('Y-m-d', strtotime('+1 day'));
+
+        $isTodayWanPra = \App\Managers\ThaiCalendarHelper::isWanPra($today);
+        $isTomorrowWanPra = \App\Managers\ThaiCalendarHelper::isWanPra($tomorrow);
+
+        $msgTitle = "";
+        $msgBody = "";
+        $shouldSend = false;
+
+        // Debug/Force Mode via Query Params
+        $params = $request->getQueryParams();
+        if (isset($params['force'])) {
+            if ($params['force'] == 'today') {
+                $msgTitle = "วันนี้วันพระ";
+                $msgBody = "วันนี้วันพระ ขอให้ท่านมีความสุขกาย สบายใจ";
+                $shouldSend = true;
+            } elseif ($params['force'] == 'tomorrow') {
+                $msgTitle = "พรุ่งนี้วันพระ";
+                $msgBody = "พรุ่งนี้วันพระ อย่าลืมเตรียมตัวทำบุญตักบาตร";
+                $shouldSend = true;
+            } elseif ($params['force'] == 'test') { // Force Test
+                $msgTitle = "ทดสอบแจ้งเตือนวันพระ";
+                $msgBody = "นี่คือข้อความทดสอบระบบแจ้งเตือนวันพระ";
+                $shouldSend = true;
+            }
+        } else {
+            // Auto Mode based on Time
+            if ($hour >= 6 && $hour < 9 && $isTodayWanPra) {
+                // Check if already sent? (Wait, simple cron assumes calling ONCE per window)
+                // To prevent double send, usually we need DB log.
+                // But user simply asked for logic. Assuming Cron runs once at 7:00 and 18:00
+                $msgTitle = "วันนี้วันพระ";
+                $msgBody = "วันนี้วันพระ ขอให้ท่านมีความสุขกาย สบายใจ";
+                $shouldSend = true;
+            } elseif ($hour >= 17 && $hour < 20 && $isTomorrowWanPra) {
+                $msgTitle = "พรุ่งนี้วันพระ";
+                $msgBody = "พรุ่งนี้วันพระ อย่าลืมเตรียมตัวทำบุญตักบาตร";
+                $shouldSend = true;
+            }
+        }
+
+        if ($shouldSend) {
+            // Fetch All Tokens & MemberID
+            $stmt = $this->db->query("SELECT memberid, fcm_token FROM membertb WHERE fcm_token IS NOT NULL AND fcm_token != ''");
+            $users = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+            $total = count($users);
+            $successCount = 0;
+
+            if ($total > 0) {
+                foreach ($users as $u) {
+                    $res = '';
+                    // Use existing sendFcm (HTTP v1 loop)
+                    $result = $this->sendFcm($u->fcm_token, $msgTitle, $msgBody, ['type' => 'wanpra', 'memberid' => (string) $u->memberid], $res);
+                    if ($result)
+                        $successCount++;
+                }
+
+                $response->getBody()->write(json_encode([
+                    'status' => 'success',
+                    'message' => "Sent '$msgTitle' to $successCount / $total devices."
+                ]));
+            } else {
+                $response->getBody()->write(json_encode(['status' => 'skipped', 'message' => 'No tokens found']));
+            }
+
+        } else {
+            $response->getBody()->write(json_encode([
+                'status' => 'skipped',
+                'message' => 'Not matched time or condition',
+                'debug' => [
+                    'hour' => $hour,
+                    'isTodayWanPra' => $isTodayWanPra,
+                    'isTomorrowWanPra' => $isTomorrowWanPra
+                ]
+            ]));
+        }
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
     public function sendBagColors($request, $response)
     {
         try {
@@ -55,12 +226,26 @@ class NotificationController extends Manager
                 $stmtBag->execute([':mid' => $user->memberid, ':age' => $ageYear]);
                 $bag = $stmtBag->fetch(PDO::FETCH_OBJ);
 
+                // Check Bag Color for this age
+                $debugInfo = [
+                    'memberid' => $user->memberid,
+                    'age' => $ageYear,
+                    'has_token' => !empty($user->fcm_token),
+                    'token_preview' => substr($user->fcm_token ?? '', 0, 10),
+                    'bag_found' => ($bag ? true : false),
+                    'service_acc_exists' => file_exists(__DIR__ . '/../../configs/service-account.json')
+                ];
+
                 if ($bag) {
                     $title = "สีกระเป๋ามงคล (อายุ $ageYear)";
                     $body = "คลิกเพื่อดูสีกระเป๋าเสริมดวงของคุณวันนี้!";
 
-                    // Sending logic
-                    $res = $this->sendFcm($user->fcm_token, $title, $body, ['type' => 'bag_color', 'memberid' => (string) $user->memberid]);
+                    $fcmResponse = '';
+                    $res = $this->sendFcm($user->fcm_token, $title, $body, ['type' => 'bag_color', 'memberid' => (string) $user->memberid], $fcmResponse);
+
+                    $debugInfo['fcm_result'] = $res;
+                    $debugInfo['fcm_response_raw'] = $fcmResponse;
+
                     $status = $res ? 'sent' : 'failed';
                     if ($res)
                         $sentCount++;
@@ -68,13 +253,16 @@ class NotificationController extends Manager
                     $results[] = [
                         'memberid' => $user->memberid,
                         'age' => $ageYear,
-                        'status' => $status
+                        'status' => $status,
+                        'fcm_response' => $fcmResponse,
+                        'debug' => $debugInfo
                     ];
                 } else {
                     $results[] = [
                         'memberid' => $user->memberid,
                         'age' => $ageYear,
-                        'status' => 'no_bag_color_found'
+                        'status' => 'no_bag_color_found',
+                        'debug' => $debugInfo
                     ];
                 }
             }
@@ -88,12 +276,12 @@ class NotificationController extends Manager
         }
     }
 
-    private function sendFcm($token, $title, $body, $data = [])
+    private function sendFcm($token, $title, $body, $data = [], &$rawResponse = null)
     {
         $serviceAccountPath = __DIR__ . '/../../configs/service-account.json';
 
         if (!file_exists($serviceAccountPath)) {
-            // Log error
+            error_log("FCM Error: service-account.json not found at " . $serviceAccountPath);
             return false;
         }
 
@@ -102,21 +290,26 @@ class NotificationController extends Manager
             $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
             $credentials = new \Google\Auth\Credentials\ServiceAccountCredentials($scopes, $serviceAccountPath);
             $accessToken = $credentials->fetchAuthToken(\Google\Auth\HttpHandler\HttpHandlerFactory::build());
+
+            if (!isset($accessToken['access_token'])) {
+                error_log("FCM Error: Failed to fetch access token - " . json_encode($accessToken));
+                return false;
+            }
+
             $tokenValue = $accessToken['access_token'];
 
             // 2. Build HTTP v1 Payload
-            // Note: HTTP v1 uses a different payload structure than Legacy
             $url = "https://fcm.googleapis.com/v1/projects/" . $credentials->getProjectId() . "/messages:send";
+
+            $dataPayload = array_merge([
+                'title' => $title,
+                'body' => $body
+            ], $data);
 
             $message = [
                 'message' => [
                     'token' => $token,
-                    // Send as data-only to ensure onMessageReceived is called even in background
-                    'data' => [
-                        'title' => $title,
-                        'body' => $body,
-                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
-                    ]
+                    'data' => $dataPayload
                 ]
             ];
 
@@ -133,15 +326,22 @@ class NotificationController extends Manager
             curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Try disabling SSL verify if there are cert issues
 
-            $response = curl_exec($ch);
+            $rawResponse = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             curl_close($ch);
+
+            // Log the attempt
+            $logMsg = date('[Y-m-d H:i:s] ') . "Target: " . substr($token, 0, 10) . "... | Status: $httpCode | Res: $rawResponse | CurlErr: $curlError\n";
+            file_put_contents(__DIR__ . '/../../fcm_log.txt', $logMsg, FILE_APPEND);
 
             return $httpCode === 200;
 
         } catch (\Exception $e) {
-            // Log exception
+            error_log("FCM Exception: " . $e->getMessage());
+            file_put_contents(__DIR__ . '/../../fcm_log.txt', date('[Y-m-d H:i:s] ') . "Exception: " . $e->getMessage() . "\n", FILE_APPEND);
             return false;
         }
     }

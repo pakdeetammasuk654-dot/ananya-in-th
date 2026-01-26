@@ -287,8 +287,8 @@
                                 <a href="/web/admin/users" class="admin-btn">
                                     จัดการผู้ใช้ระบบ
                                 </a>
-                                <a href="/web/admin/articles" class="admin-btn">
-                                    จัดการบทความ
+                                <a href="/web/admin/news" class="admin-btn">
+                                    จัดการบทความ (News)
                                 </a>
                                 <a href="/web/admin/images" class="admin-btn">
                                     คลังรูปภาพ 📷
@@ -296,11 +296,27 @@
                                 <a href="/web/admin/bag-colors" class="admin-btn">
                                     จัดการสีกระเป๋า 👜
                                 </a>
+                                <a href="/admin/notifications/custom" class="admin-btn">
+                                    ส่งการแจ้งเตือน 📢
+                                </a>
                                 <a href="#" class="admin-btn">
                                     จัดการเบอร์
                                 </a>
-                                <a href="#" class="admin-btn">
+                                <a href="/web/admin/tabians" class="admin-btn">
                                     จัดการป้ายทะเบียน
+                                </a>
+                                <a href="/admin/buddha" class="admin-btn">
+                                    จัดการพระปางต่างๆ ☸️
+                                </a>
+                                <a href="/admin/temple" class="admin-btn">
+                                    วัดเก่าวัดศักดิ์สิทธิ์ 🛕
+                                </a>
+                                <a href="/web/admin/spells" class="admin-btn">
+                                    คาถาและคำเตือนพิเศษ ✨
+                                </a>
+                                <a href="/web/admin/api-doc/news" class="admin-btn"
+                                    style="border-color:#17a2b8; color:#17a2b8;">
+                                    API Doc (News) 📄
                                 </a>
                             </div>
                         </div>

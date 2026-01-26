@@ -6,9 +6,24 @@ class HomePageManager extends Manager
 
     public function index($req, $res)
     {
+        // Fetch real articles for the landing page
+        $pinnedArticles = [];
+        try {
+            $stmt = $this->db->query("SELECT * FROM articles WHERE is_published = 1 ORDER BY published_at DESC LIMIT 3");
+            $pinnedArticles = $stmt->fetchAll(\PDO::FETCH_OBJ);
+        } catch (\Exception $e) {
+            // Fallback if table doesn't exist or other error
+        }
 
-        $vars['mng_message'] = 'Message From Manager!!!';
-        return $this->view->render($res, 'index.phtml', $vars);
+        $vars = [
+            'pinnedArticles' => $pinnedArticles,
+            'appStats' => [
+                'downloads' => '50K+',
+                'rating' => '4.8'
+            ]
+        ];
+
+        return $this->view->render($res, 'web_index.php', $vars);
     }
 
 

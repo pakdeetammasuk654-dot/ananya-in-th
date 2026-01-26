@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bag Color Management - Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -233,7 +234,7 @@
         <div class="nav-container">
             <div class="nav-flex">
                 <a href="/web/dashboard" class="nav-logo">
-                    <img src="/loggo.gif" alt="Logo">
+                    <i class="fa-solid fa-clover" style="color: #10b981; font-size: 2rem; margin-right: 0.5rem;"></i>
                     <span>Admin Panel</span>
                 </a>
                 <div class="nav-links">
@@ -248,6 +249,7 @@
 
     <div class="container py-8">
         <h1>จัดการสีกระเป๋ามงคล (Bag Color Management)</h1>
+        <?php include 'web_admin_toolbar.php'; ?>
 
         <!-- Search Form -->
         <div class="card">

@@ -638,6 +638,26 @@ class TabianController extends Manager
         $pointD = 0;
         $pointR = 0;
 
+        // Ensure keys exist to avoid PHP Notices/Warnings
+        if (!isset($this->percentTabian['pairPercentAngSon'])) {
+            $this->percentTabian['pairPercentAngSon'] = array('percentD' => 0, 'percentR' => 0);
+        }
+        if (!isset($this->percentTabian['percentByCaseA'])) {
+            $this->percentTabian['percentByCaseA'] = array();
+        }
+        if (!isset($this->percentTabian['percentByCaseB'])) {
+            $this->percentTabian['percentByCaseB'] = array();
+        }
+        if (!isset($this->percentTabian['sumPercentNum'])) {
+            $this->percentTabian['sumPercentNum'] = array('percentD' => 0, 'percentR' => 0);
+        }
+        if (!isset($this->percentTabian['sumPercentMud'])) {
+            $this->percentTabian['sumPercentMud'] = array('percentD' => 0, 'percentR' => 0);
+        }
+        if (!isset($this->percentTabian['pairPercentNumMud'])) {
+            $this->percentTabian['pairPercentNumMud'] = array('percentD' => 0, 'percentR' => 0);
+        }
+
         $pointD = $pointD + $this->percentTabian['pairPercentAngSon']['percentD'];
         $pointR = $pointR + $this->percentTabian['pairPercentAngSon']['percentR'];
 
@@ -2360,5 +2380,17 @@ class TabianController extends Manager
 
     }
 
+
+
+    public function listTabianSell($request, $response)
+    {
+        $sql = "SELECT * FROM tabian_sell WHERE tabian_status = 'available' ORDER BY tabian_id DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        $data = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+        $response->getBody()->write(json_encode($data));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
 
 }

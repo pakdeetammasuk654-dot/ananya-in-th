@@ -4,255 +4,403 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Number เลขศาสตร์ พลังเงา - Google Play Store</title>
+    <title>Ananya - Number Lucky | เลขศาสตร์ พลังเงา</title>
     <link rel="icon" type="image/png" href="/favicon.png">
-    <!-- Google Fonts -->
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Sarabun:wght@300;400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Outfit:wght@400;500;700&display=swap"
         rel="stylesheet">
-    <!-- Font Awesome -->
+
+    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         :root {
-            --gp-green: #01875f;
-            --gp-text-black: #202124;
-            --gp-text-gray: #5f6368;
-            --gp-bg: #ffffff;
-            --gp-border: #dadce0;
+            --primary: #8b5cf6;
+            --primary-dark: #7c3aed;
+            --secondary: #ec4899;
+            --accent: #f59e0b;
+            --bg-dark: #0f172a;
+            --bg-darker: #020617;
+            --text-light: #f8fafc;
+            --text-gray: #94a3b8;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
 
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Sarabun', sans-serif;
-            background-color: var(--gp-bg);
-            color: var(--gp-text-black);
-            line-height: 1.5;
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            overflow-x: hidden;
         }
 
-        /* --- Store Content Layout --- */
-        .store-container {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
+        /* Override Navbar for Homepage */
+        .navbar {
+            background: rgba(15, 23, 42, 0.8) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+            position: fixed !important;
+            width: 100%;
+            top: 0;
+            box-sizing: border-box;
         }
 
-        /* --- Hero / Header Section --- */
-        .app-hero {
+        /* Section Spacing */
+        main {
+            padding-top: 80px;
+            /* Offset fixed navbar */
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            min-height: 90vh;
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 2.5rem;
-            gap: 2rem;
-        }
-
-        .app-info {
-            flex: 1;
-        }
-
-        .app-title {
-            font-family: 'Kanit', sans-serif;
-            font-size: 2.75rem;
-            font-weight: 500;
-            margin: 0 0 0.5rem 0;
-            color: var(--gp-text-black);
-        }
-
-        .app-developer {
-            color: var(--gp-green);
-            text-decoration: none;
-            font-size: 1.1rem;
-            font-weight: 500;
-            font-family: 'Kanit', sans-serif;
-        }
-
-        .app-developer:hover {
-            text-decoration: underline;
-        }
-
-        .app-icon-container {
-            width: 192px;
-            height: 192px;
-            border-radius: 36px;
-            box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+            align-items: center;
+            justify-content: center;
             overflow: hidden;
-            flex-shrink: 0;
-            background: white;
+            padding: 2rem;
         }
 
-        .app-icon-container img {
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            background: radial-gradient(circle at 20% 20%, #2e1065 0%, #0f172a 50%);
+            z-index: -1;
         }
 
-        /* --- Stats Row --- */
-        .stats-row {
-            display: flex;
-            gap: 2rem;
-            margin: 1.5rem 0;
+        .hero-blob {
+            position: absolute;
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: float 10s infinite ease-in-out;
+            border-radius: 50%;
+        }
+
+        .blob-1 {
+            top: -10%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: var(--primary);
+        }
+
+        .blob-2 {
+            bottom: -10%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: var(--secondary);
+            animation-delay: -5s;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
             align-items: center;
+            z-index: 1;
         }
 
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            border-right: 1px solid var(--gp-border);
-            padding-right: 2rem;
+        .hero-text h1 {
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
         }
 
-        .stat-item:last-child {
-            border-right: none;
+        .hero-text span {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .stat-value {
-            font-weight: 600;
-            font-size: 1.1rem;
+        .hero-text p {
+            font-size: 1.25rem;
+            color: var(--text-gray);
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
         }
 
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--gp-text-gray);
-            margin-top: 4px;
-        }
-
-        /* --- Action Buttons --- */
-        .actions-row {
+        .cta-group {
             display: flex;
             gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
             align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(139, 92, 246, 0.6);
+        }
+
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .hero-image {
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
+        .hero-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: perspective(1000px) rotateY(-5deg);
+            transition: transform 0.3s ease;
+        }
+
+        .hero-card:hover {
+            transform: perspective(1000px) rotateY(0deg) scale(1.02);
+        }
+
+        /* Stats Section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1.5rem;
             margin-top: 2rem;
         }
 
-        .btn-install {
-            background-color: var(--gp-green);
-            color: white;
-            padding: 0.6rem 2.5rem;
-            border-radius: 24px;
-            font-weight: 500;
-            font-family: 'Kanit', sans-serif;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background-color 0.2s;
-            text-decoration: none;
-            display: inline-block;
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 16px;
+            text-align: center;
         }
 
-        .btn-install:hover {
-            background-color: #037050;
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
         }
 
-        .btn-share {
-            background: none;
-            border: none;
-            color: var(--gp-green);
-            font-size: 1.25rem;
-            cursor: pointer;
-            padding: 0.5rem;
-        }
-
-        /* --- Availability Bar --- */
-        .availability-bar {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
+        .stat-label {
             font-size: 0.9rem;
-            color: var(--gp-text-gray);
+            color: var(--text-gray);
         }
 
-        .availability-bar i {
-            font-size: 1.1rem;
+        /* Features Section */
+        .section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        /* --- Screenshots Section --- */
-        .screenshots-section {
-            margin: 4rem 0;
-        }
-
-        .screenshots-scroll {
-            display: flex;
-            gap: 1rem;
-            overflow-x: auto;
-            padding-bottom: 1.5rem;
-            scrollbar-width: thin;
-        }
-
-        .screenshot-item {
-            flex-shrink: 0;
-            width: 200px;
-            height: 355px;
-            /* Aspect 9:16 approx scaled down */
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--gp-border);
-            box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .1);
-        }
-
-        .screenshot-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* --- Content Sections --- */
         .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.25rem;
+            text-align: center;
+            margin-bottom: 4rem;
         }
 
         .section-title {
-            font-family: 'Kanit', sans-serif;
-            font-size: 1.25rem;
-            font-weight: 500;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
         }
 
-        .content-text {
-            color: var(--gp-text-gray);
-            font-size: 0.95rem;
-            line-height: 1.6;
-            white-space: pre-line;
-            margin-bottom: 2rem;
+        .section-subtitle {
+            color: var(--text-gray);
+            font-size: 1.1rem;
         }
 
-        /* --- Responsive --- */
-        @media (max-width: 768px) {
-            .app-hero {
-                flex-direction: column-reverse;
-                align-items: center;
-                text-align: center;
-            }
-
-            .app-title {
-                font-size: 2rem;
-            }
-
-            .stats-row {
-                justify-content: center;
-            }
-
-            .actions-row {
-                justify-content: center;
-            }
-
-            .availability-bar {
-                justify-content: center;
-            }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
         }
 
-        /* --- Footer --- */
-        .store-footer {
-            margin-top: 5rem;
-            padding-top: 2rem;
-            border-top: 1px solid var(--gp-border);
+        .feature-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-desc {
+            color: var(--text-gray);
+            line-height: 1.5;
+        }
+
+        /* Articles Section */
+        .articles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .article-card {
+            background: #1e293b;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .article-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .article-content {
+            padding: 1.5rem;
+        }
+
+        .article-category {
+            font-size: 0.8rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .article-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+            color: white;
+        }
+
+        .article-excerpt {
+            font-size: 0.9rem;
+            color: var(--text-gray);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid var(--glass-border);
+            padding: 4rem 2rem 2rem;
+            background: var(--bg-darker);
             text-align: center;
-            padding-bottom: 3rem;
+            color: var(--text-gray);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate(20px, -20px) scale(1.05);
+            }
+
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+        }
+
+        @media (max-width: 968px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 3rem;
+            }
+
+            .hero-text h1 {
+                font-size: 3rem;
+            }
+
+            .cta-group {
+                justify-content: center;
+            }
+
+            .hero-card {
+                margin: 0 auto;
+                transform: none;
+            }
+
+            .hero-card:hover {
+                transform: scale(1.02);
+            }
         }
     </style>
 </head>
@@ -261,124 +409,147 @@
 
     <?php include 'web_menu.php'; ?>
 
-    <main class="store-container">
+    <main>
         <!-- Hero Section -->
-        <section class="app-hero">
-            <div class="app-info">
-                <h1 class="app-title">Number เลขศาสตร์ พลังเงา</h1>
-                <a href="#" class="app-developer">numberniceic</a>
+        <section class="hero">
+            <div class="hero-bg"></div>
+            <div class="hero-blob blob-1"></div>
+            <div class="hero-blob blob-2"></div>
 
-                <div class="stats-row">
-                    <div class="stat-item">
-                        <span class="stat-value"><?php echo $appStats['downloads'] ?? '1+'; ?></span>
-                        <span class="stat-label">Downloads</span>
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>ค้นพบพลังแห่ง<br><span>ตัวเลขมงคล</span></h1>
+                    <p>
+                        Ananya Number Miracle<br>
+                        เปลี่ยนเบอร์ เปลี่ยนชีวิต ด้วยศาสตร์แห่งตัวเลข<br>
+                        วิเคราะห์ดวง วางเบอร์มงคล ทะเบียนรถ และชื่อมงคล
+                    </p>
+                    <div class="cta-group">
+                        <a href="https://play.google.com/store/apps/details?id=com.numberniceic" target="_blank"
+                            class="btn btn-primary">
+                            <i class="fa-brands fa-google-play"></i> โหลดแอปเลย
+                        </a>
+                        <a href="/lucky/number" class="btn btn-glass">
+                            <i class="fa-solid fa-star"></i> เลขนำโชค
+                        </a>
                     </div>
-                    <?php if (!empty($appStats['rating']) && $appStats['rating'] > 0): ?>
-                        <div class="stat-item">
-                            <span class="stat-value"><?php echo $appStats['rating']; ?> <i class="fa-solid fa-star"
-                                    style="font-size:0.8rem; color:#FFD700"></i></span>
-                            <span class="stat-label">Rating</span>
+                </div>
+
+                <div class="hero-image">
+                    <div class="hero-card">
+                        <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+                            <img src="https://play-lh.googleusercontent.com/1zRGPJdAu_e7XrS-vC0cPEdrrEF5xhZ96Wm2VTzSUAgFihw36gGpwvt_dENOHY7A6DkDSDpFB2gpuKiNKg94=s128-rw"
+                                alt="Icon" style="width:64px; height:64px; border-radius:16px;">
+                            <div>
+                                <h3 style="margin:0; font-size:1.2rem;">Ananya Number</h3>
+                                <p style="margin:0; color:var(--text-gray); font-size:0.9rem;">Lifestyle</p>
+                            </div>
                         </div>
-                    <?php endif; ?>
-                    <div class="stat-item">
-                        <span class="stat-value" style="display:flex; align-items:center; gap:4px;">
-                            3+ <i class="fa-solid fa-square-info" style="font-size:0.8rem"></i>
-                        </span>
-                        <span class="stat-label">Rated for 3+ <i class="fa-solid fa-circle-info"></i></span>
-                    </div>
-                </div>
 
-                <div class="actions-row">
-                    <a href="https://play.google.com/store/apps/details?id=com.numberniceic" target="_blank"
-                        class="btn-install">Install on more devices</a>
-                    <button class="btn-share"><i class="fa-solid fa-share-nodes"></i></button>
-                </div>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <div class="stat-number"><?php echo $appStats['downloads'] ?? '10K+'; ?></div>
+                                <div class="stat-label">Downloads</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number"><?php echo $appStats['rating'] ?? '4.8'; ?> <i
+                                        class="fa-solid fa-star text-yellow-400" style="font-size:0.8em"></i></div>
+                                <div class="stat-label">Rating</div>
+                            </div>
+                        </div>
 
-                <div class="availability-bar">
-                    <i class="fa-solid fa-mobile-screen"></i>
-                    <span>This app is available for all of your devices</span>
-                </div>
-            </div>
-
-            <div class="app-icon-container">
-                <img src="https://play-lh.googleusercontent.com/1zRGPJdAu_e7XrS-vC0cPEdrrEF5xhZ96Wm2VTzSUAgFihw36gGpwvt_dENOHY7A6DkDSDpFB2gpuKiNKg94=s512-rw"
-                    alt="App Icon">
-            </div>
-        </section>
-
-        <!-- Screenshots Carousel -->
-        <section class="screenshots-section">
-            <div class="screenshots-scroll">
-                <div class="screenshot-item"><img
-                        src="https://play-lh.googleusercontent.com/UG_lPrKiwEIgsmbP8ixOvm0iVVGrRDp0V1a-0u6QlkVp7fIEHJggAMqvF8W1zbz3git5BBMUx1upl1vqHs1ynA=w1052-h592-rw"
-                        alt="Screenshot 1"></div>
-                <div class="screenshot-item"><img
-                        src="https://play-lh.googleusercontent.com/ZMu30k6mgO3vdSneMM71mNXt4b6keurWCPONV8rBtWFcU8TUNHBkDrCxLJ5014c6Ab2ImACm8q5K9cQJfP2d=w1052-h592-rw"
-                        alt="Screenshot 2"></div>
-                <div class="screenshot-item"><img
-                        src="https://play-lh.googleusercontent.com/hygSqXPTp7SupKIYhSJ3Aom0rW2E7W4s3dNN8T0uXxuCgWMn9EXdE_5UnGz3uNJmkZEPsYsct-9uHVJGf-8k2QA=w1052-h592-rw"
-                        alt="Screenshot 3"></div>
-                <div class="screenshot-item"><img
-                        src="https://play-lh.googleusercontent.com/e0m8tzxuzcLRNAe7gkKejskRFab1L74WiLpjl3zkd1WyNXOEHjcL-h9lQchpMJSwvMNOgRM8xBxujx3-gaxG5iQ=w1052-h592-rw"
-                        alt="Screenshot 4"></div>
-                <div class="screenshot-item"><img
-                        src="https://play-lh.googleusercontent.com/guG2mfzkBc_J46VnzfGrZNsRGQpOxsLwyupgfb6kcqAbMdtox9onZBa1KaYPIZ8lz489WAFPNPX75XGEaKgmNlU=w1052-h592-rw"
-                        alt="Screenshot 5"></div>
-                <div class="screenshot-item"><img
-                        src="https://play-lh.googleusercontent.com/Yg_2fQEuo385emuQGkHICXdZ9FPF0QU5CkngffSdx8oMuBHhTB4RdVqfy11kwwJisPal2Uew2Aqoh28lry9s=w1052-h592-rw"
-                        alt="Screenshot 6"></div>
-            </div>
-        </section>
-
-        <!-- Summary / What's New Section -->
-        <section class="content-section">
-            <div class="section-header">
-                <h2 class="section-title">What's new</h2>
-                <i class="fa-solid fa-arrow-right" style="color:var(--gp-text-gray)"></i>
-            </div>
-            <div class="content-text">
-                รับเปิดดวงชะตาดูดวงประจำปีเพื่อให้รู้ดีรู้ร้ายล่วงหน้าและเพื่อเตรียมการป้องกัน แก้ไข
-                และเปลี่ยนแปลงเลขเปลี่ยนแปลงดวงชะตาตามวาระที่คู่ควร เจาะพื้นดวงและเจาะเลข วิเคราะห์ดวง วางเลขวางเบอร์
-                วางเลขเบอร์โทรศัพท์ทะเบียนรถและบ้านเลขที่มงคลตรงตามพื้นดวงและโฉลกดวง
-                ตั้งชื่อเล่นชื่อจริงนามสกุลมงคลทั้งเด็กและผู้ใหญ่ตรงตามพื้นดวงและโฉลกดวงชะตา
-                เบอร์โทรศัพท์มงคลทุกเบอร์มีจริง
-                ทะเบียนรถมงคลทุกป้ายมีจริงออกโดยกรมขนส่งอย่างถูกต้องตามกฎหมายและสามารถใช้ได้กับรถใหม่ป้ายแดง
-                หรือรถที่มีเลขทะเบียนอยู่แล้วได้จริง
-            </div>
-        </section>
-
-        <!-- Pinned Articles / News section (Styled like "Similar apps") -->
-        <section class="content-section">
-            <div class="section-header">
-                <h2 class="section-title">บทความแนะนำ</h2>
-                <a href="/articles"
-                    style="color:var(--gp-green); text-decoration:none; font-weight:500; font-size:0.9rem;">ดูทั้งหมด</a>
-            </div>
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
-                <?php foreach ($pinnedArticles ?: [] as $a): ?>
-                    <a href="/articles/<?php echo $a->slug; ?>"
-                        style="text-decoration:none; display:flex; gap:1rem; align-items:center;">
                         <div
-                            style="width:64px; height:64px; border-radius:12px; overflow:hidden; border:1px solid var(--gp-border); flex-shrink:0;">
-                            <img src="<?php echo $a->image_url; ?>" style="width:100%; height:100%; object-fit:cover;">
+                            style="margin-top:1.5rem; padding:1rem; background:rgba(255,255,255,0.05); border-radius:12px;">
+                            <p style="margin:0; font-size:0.9rem; color:#cbd5e1;">
+                                <i class="fa-solid fa-quote-left" style="color:var(--primary); margin-right:8px;"></i>
+                                แอปดีมากครับ แม่นยำเรื่องตัวเลข ช่วยตัดสินใจได้เยอะเลย
+                            </p>
                         </div>
-                        <div style="overflow:hidden;">
-                            <div
-                                style="font-family:'Kanit',sans-serif; color:var(--gp-text-black); font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                <?php echo $a->title; ?>
-                            </div>
-                            <div style="color:var(--gp-text-gray); font-size:0.85rem; margin-top:2px;">
-                                <?php echo $a->category; ?>
-                            </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features / Services -->
+        <section class="section" id="features">
+            <div class="section-header">
+                <h2 class="section-title">บริการของเรา</h2>
+                <p class="section-subtitle">ครบเครื่องเรื่องตัวเลขและมงคลชีวิต</p>
+            </div>
+
+            <div class="features-grid">
+                <!-- Service 1 -->
+                <a href="/shopsell/main" class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-sim-card"></i>
+                    </div>
+                    <h3 class="feature-title">เบอร์มงคล</h3>
+                    <p class="feature-desc">ค้นหาเบอร์โทรศัพท์ที่เหมาะสมกับพื้นดวงของคุณ เสริมดวงการงาน การเงิน
+                        และความรัก</p>
+                </a>
+
+                <!-- Service 2 -->
+                <a href="/changenum/tabian" class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-car"></i>
+                    </div>
+                    <h3 class="feature-title">ทะเบียนรถมงคล</h3>
+                    <p class="feature-desc">วิเคราะห์และจัดหาทะเบียนรถสวย เลขผลรวมดี ขับขี่ปลอดภัย แคล้วคลาด</p>
+                </a>
+
+                <!-- Service 3 -->
+                <a href="/changenum/namenick" class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-signature"></i>
+                    </div>
+                    <h3 class="feature-title">วิเคราะห์ชื่อ</h3>
+                    <p class="feature-desc">ตรวจสอบชื่อ-นามสกุล ว่าเป็นมงคลหรือไม่
+                        พร้อมบริการตั้งชื่อใหม่ตามหลักเลขศาสตร์</p>
+                </a>
+
+                <!-- Service 4 -->
+                <a href="/web/auspicious-list" class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-calendar-days"></i>
+                    </div>
+                    <h3 class="feature-title">ฤกษ์มงคล</h3>
+                    <p class="feature-desc">ปฏิทินวันธงชัย วันพระ และฤกษ์ดีสำหรับการเริ่มต้นสิ่งใหม่ๆ ในชีวิต</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Articles Section -->
+        <section class="section" style="background:var(--bg-darker);">
+            <div class="section-header">
+                <h2 class="section-title">บทความน่ารู้</h2>
+                <p class="section-subtitle">สาระความรู้เกี่ยวกับตัวเลขและดวงชะตา</p>
+            </div>
+
+            <div class="articles-grid">
+                <?php foreach (($pinnedArticles ?: []) as $article): ?>
+                    <a href="/articles/<?php echo $article->slug; ?>" class="article-card">
+                        <div style="height:200px; overflow:hidden;">
+                            <img src="<?php echo $article->image_url; ?>"
+                                alt="<?php echo htmlspecialchars($article->title); ?>" class="article-image">
+                        </div>
+                        <div class="article-content">
+                            <div class="article-category"><?php echo $article->category ?: 'General'; ?></div>
+                            <h3 class="article-title"><?php echo $article->title; ?></h3>
+                            <p class="article-excerpt">
+                                <?php echo mb_substr(strip_tags($article->excerpt ?: $article->content), 0, 100) . '...'; ?>
+                            </p>
                         </div>
                     </a>
                 <?php endforeach; ?>
             </div>
+
+            <div style="text-align:center; margin-top:3rem;">
+                <a href="/articles" class="btn btn-glass">ดูบทความทั้งหมด <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
         </section>
 
-        <footer class="store-footer">
-            <p style="color:var(--gp-text-gray); font-size:0.9rem;">&copy; <?php echo date('Y'); ?> Number เลขศาสตร์
-                พลังเงา. พัฒนาโดย numberniceic</p>
+        <footer class="footer">
+            <p>&copy; <?php echo date('Y'); ?> Number เลขศาสตร์ พลังเงา (Ananya). All rights reserved.</p>
         </footer>
     </main>
 

@@ -34,34 +34,6 @@ class UserController extends Manager
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    public function miraDoV2($request, $response)
-    {
-
-        $wanpra = false;
-
-        $activity = $request->getAttribute('activity');
-        $birthday = $request->getAttribute('birthday');
-        $currentday = $request->getAttribute('currentday');
-        $today = $request->getAttribute('today');
-
-        if (!empty($birthday)) {
-            $sql = "SELECT * FROM miracledo LEFT JOIN miracledo_desc ON miracledo.mira_id = miracledo_desc.mira_id WHERE miracledo.activity = '$activity' && miracledo.dayx = '$birthday' && miracledo.dayy = '$today'";
-
-            $result = $this->db->prepare($sql);
-            $result->execute();
-            $object = $result->fetch(\PDO::FETCH_OBJ);
-            if (is_object($object)) {
-
-                $wanpra = ThaiCalendarHelper::isWanPra($currentday);
-
-                $response->getBody()->write(json_encode(array('wanpra' => $wanpra, 'domira' => $object)));
-                return $response->withHeader('Content-Type', 'application/json');
-            }
-        }
-
-        $response->getBody()->write(json_encode(null));
-        return $response->withHeader('Content-Type', 'application/json');
-    }
 
 
     public function dressColor($request, $response)
@@ -96,33 +68,85 @@ class UserController extends Manager
 
     public function lengyamList($request, $response)
     {
+        if (session_status() == PHP_SESSION_ACTIVE)
+            session_write_close();
         $WanSpecial = null;
         $objWanprasx = null;
 
+        // Fix Timezone for Thailand
+        date_default_timezone_set('Asia/Bangkok');
         $presentDay = date('Y-m-d');
+        $endDate = date('Y-m-d', strtotime('+2 month'));
 
-        $auspicious = ThaiCalendarHelper::getAuspiciousStatus($presentDay);
-        $isWanPraToday = ThaiCalendarHelper::isWanPra($presentDay);
+        // Use Pre-calculated DB for today's status (O(1) speed)
+        $pdo = $this->db;
+        $stmtToday = $pdo->prepare("SELECT is_wanpra, is_tongchai, is_atipbadee FROM auspicious_days WHERE date = ?");
+        $stmtToday->execute([$presentDay]);
+        $todayData = $stmtToday->fetch(\PDO::FETCH_ASSOC);
+
+        $wanTongchai = "0";
+        $wanAtipbadee = "0";
+        $wanPraStr = "0";
+
+        if ($todayData) {
+            $wanTongchai = $todayData['is_tongchai'] ? "1" : "0";
+            $wanAtipbadee = $todayData['is_atipbadee'] ? "1" : "0";
+            $wanPraStr = $todayData['is_wanpra'] ? "1" : "0";
+        }
+
+        // EMERGENCY FIX: Force 21 Jan 2026 to NOT be Tongchai
+        if ($presentDay == '2026-01-21') {
+            $wanTongchai = "0";
+            $wanAtipbadee = "0";
+        }
+        // Query Special DB (dayspecialtb) for custom text
+        $sql = "SELECT * FROM dayspecialtb WHERE wan_date = '$presentDay'";
+        $result = $this->db->prepare($sql);
+        $result->execute();
+        $dbSpecial = $result->fetch(\PDO::FETCH_OBJ);
+
+        $wanKating = "0";
+        $wanDesc = ($wanPraStr == "1") ? "วันนี้วันพระ" : "";
+        $wanDetail = "";
+        $dayId = "1";
+
+        if (is_object($dbSpecial)) {
+            $dayId = $dbSpecial->dayid ?? "1";
+            if (!empty($dbSpecial->wan_desc))
+                $wanDesc = $dbSpecial->wan_desc;
+            if (!empty($dbSpecial->wan_detail))
+                $wanDetail = $dbSpecial->wan_detail;
+            if (!empty($dbSpecial->wan_kating))
+                $wanKating = $dbSpecial->wan_kating;
+        }
 
         $WanSpecial = [
-            'dayid' => '1',
+            'dayid' => $dayId,
             'wan_date' => $presentDay,
-            'wan_desc' => $isWanPraToday ? "วันนี้วันพระ" : "",
-            'wan_detail' => "",
-            'wan_pra' => $isWanPraToday ? "1" : "0",
-            'wan_kating' => "0", // Could add kating calculation if desired
-            'wan_tongchai' => $auspicious['is_tongchai'] ? "1" : "0",
-            'wan_atipbadee' => $auspicious['is_atipbadee'] ? "1" : "0"
+            'wan_desc' => $wanDesc,
+            'wan_detail' => $wanDetail,
+            'wan_pra' => $wanPraStr,
+            'wan_kating' => $wanKating,
+            'wan_tongchai' => $wanTongchai,
+            'wan_atipbadee' => $wanAtipbadee
         ];
 
-        $arrWanpras = ThaiCalendarHelper::getUpcomingAuspiciousEvents(4);
+        // SUPER SPEED FIX: Use pre-calculated Database table
+        $pdo = $this->db;
+        $stmt = $pdo->prepare("SELECT date as wanpra_date, is_wanpra as is_wanpra, is_tongchai, is_atipbadee FROM auspicious_days WHERE date >= ? AND date <= ? ORDER BY date ASC");
+        $stmt->execute([$presentDay, $endDate]);
+        $arrWanpras = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        $nextWanpra = "";
-        foreach ($arrWanpras as $wanpra) {
-            $nextWanpra = $this->nextWanpra($wanpra['wanpra_date'], $arrWanpras);
-            if ($nextWanpra != "")
-                break;
+        // Map types to match expected helper format if necessary
+        foreach ($arrWanpras as &$wp) {
+            $wp['is_wanpra'] = (bool) $wp['is_wanpra'];
+            $wp['is_tongchai'] = (bool) $wp['is_tongchai'];
+            $wp['is_atipbadee'] = (bool) $wp['is_atipbadee'];
         }
+
+
+        // Efficiently find the next wanpra once, instead of in a loop
+        $nextWanpra = $this->nextWanpra($presentDay, $arrWanpras);
 
         if ($arrWanpras) {
             $objWanprasx = $arrWanpras;
@@ -134,50 +158,123 @@ class UserController extends Manager
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-
     private function nextWanpra(string $strWanpra, array $wanpraList): string
     {
         $wanPra = "";
-
         foreach ($wanpraList as $value) {
             if (date('Y-m-d') <= $value['wanpra_date']) {
-                $wanPra = $value['wanpra_date'];
-                break;
+                if ($value['is_wanpra'] == 1) {
+                    $wanPra = $value['wanpra_date'];
+                    break;
+                }
             }
         }
         return $wanPra;
     }
 
+    private function getStatusFromDB($dateStr)
+    {
+        // Handle Thai Year (256x)
+        if (preg_match('/(\d{4})/', $dateStr, $matches)) {
+            $year = (int) $matches[1];
+            if ($year > 2500) {
+                $dateStr = str_replace($year, $year - 543, $dateStr);
+            }
+        }
+        // Normalize 21-1-2026 or 21/1/2026 to Y-m-d
+        $dt = null;
+        $dateStr = str_replace(['/', '.'], '-', $dateStr);
+        try {
+            // Try standard formats
+            $dt = new \DateTime($dateStr);
+        } catch (\Exception $e) {
+            // Try d-m-Y specifically
+            $dt = \DateTime::createFromFormat('d-m-Y', $dateStr);
+            if (!$dt)
+                return ['is_wanpra' => 0, 'is_tongchai' => 0, 'is_atipbadee' => 0];
+        }
+        $formatted = $dt->format('Y-m-d');
+
+        // EMERGENCY FIX: Force 21 Jan 2026 to NOT be Tongchai/Atipbadee
+        if ($formatted === '2026-01-21') {
+            return ['is_wanpra' => 0, 'is_tongchai' => 0, 'is_atipbadee' => 0];
+        }
+
+        $stmt = $this->db->prepare("SELECT is_wanpra, is_tongchai, is_atipbadee FROM auspicious_days WHERE date = ?");
+        $stmt->execute([$formatted]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if ($row) {
+            return [
+                'is_wanpra' => (int) $row['is_wanpra'],
+                'is_tongchai' => (int) $row['is_tongchai'],
+                'is_atipbadee' => (int) $row['is_atipbadee']
+            ];
+        }
+        return ['is_wanpra' => 0, 'is_tongchai' => 0, 'is_atipbadee' => 0];
+    }
+
+    public function miraDoV2($request, $response)
+    {
+        if (session_status() == PHP_SESSION_ACTIVE)
+            session_write_close();
+        $activity = $request->getAttribute('activity');
+        $birthday = $request->getAttribute('birthday');
+        $currentday = $request->getAttribute('currentday');
+        $today = $request->getAttribute('today');
+
+        if (!empty($birthday)) {
+            $sql = "SELECT * FROM miracledo LEFT JOIN miracledo_desc ON miracledo.mira_id = miracledo_desc.mira_id WHERE miracledo.activity = :act && miracledo.dayx = :bday && miracledo.dayy = :today";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':act' => $activity, ':bday' => $birthday, ':today' => $today]);
+            $object = $stmt->fetch(\PDO::FETCH_OBJ);
+
+            if (is_object($object)) {
+                $status = $this->getStatusFromDB($currentday);
+                $wanpra = ($status['is_wanpra'] == 1);
+                $response->getBody()->write(json_encode(array('wanpra' => $wanpra, 'domira' => $object)));
+                return $response->withHeader('Content-Type', 'application/json');
+            }
+        }
+
+        $response->getBody()->write(json_encode(null));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
 
     public function wanPra($request, $response)
     {
+        if (session_status() == PHP_SESSION_ACTIVE)
+            session_write_close();
         $wandate = $request->getAttribute('wandate');
         if (!empty($wandate)) {
-            $tomorro = (new \DateTime($wandate))->add(new \DateInterval("P1D"))->format('Y-m-d');
-            $isWanpra = ThaiCalendarHelper::isWanPra($wandate);
-            $wanpraTomorro = ThaiCalendarHelper::isWanPra($tomorro);
+            $statusToday = $this->getStatusFromDB($wandate);
 
-            // Get auspicious day status for today
-            $auspiciousStatus = ThaiCalendarHelper::getAuspiciousStatus($wandate);
+            // Calculate tomorrow based on normalized date
+            $dt = new \DateTime($wandate);
+            if ((int) $dt->format('Y') > 2500)
+                $dt->modify('-543 years');
+            $tomorroDT = (clone $dt)->add(new \DateInterval("P1D"));
+            $tomorro = $tomorroDT->format('Y-m-d');
+            $statusTomorrow = $this->getStatusFromDB($tomorro);
 
-            // Get auspicious day status for tomorrow
-            $auspiciousTomorrow = ThaiCalendarHelper::getAuspiciousStatus($tomorro);
+            $dtFormatted = $dt->format('Y-m-d');
 
             $data = array(
                 'activity' => 'wanpra',
-                'tomorrow' => $wanpraTomorro,
-                'wanpra' => $isWanpra ? (object) ['wanpra_date' => $wandate] : null,
+                'tomorrow' => (bool) ($statusTomorrow['is_wanpra'] == 1),
+                'wanpra' => ($statusToday['is_wanpra'] == 1) ? (object) ['wanpra_date' => $dtFormatted] : null,
                 'wan_special' => [
-                    'wan_tongchai' => $auspiciousStatus['is_tongchai'] ? "1" : "0",
-                    'wan_atipbadee' => $auspiciousStatus['is_atipbadee'] ? "1" : "0"
+                    'wan_date' => $dtFormatted,
+                    'wan_tongchai' => (string) ($statusToday['is_tongchai'] ? "1" : "0"),
+                    'wan_atipbadee' => (string) ($statusToday['is_atipbadee'] ? "1" : "0")
                 ],
                 'wan_special_tomorrow' => [
-                    'wan_tongchai' => $auspiciousTomorrow['is_tongchai'] ? "1" : "0",
-                    'wan_atipbadee' => $auspiciousTomorrow['is_atipbadee'] ? "1" : "0"
+                    'wan_tongchai' => (string) ($statusTomorrow['is_tongchai'] ? "1" : "0"),
+                    'wan_atipbadee' => (string) ($statusTomorrow['is_atipbadee'] ? "1" : "0")
                 ]
             );
         } else {
-            $data = array('activity' => 'fail', 'tomorrow' => null, 'wanpra' => null, 'wan_special' => null, 'wan_special_tomorrow' => null);
+            $data = array('activity' => 'fail', 'tomorrow' => false, 'wanpra' => null, 'wan_special' => null, 'wan_special_tomorrow' => null);
         }
 
         $response->getBody()->write(json_encode($data));
@@ -206,45 +303,75 @@ class UserController extends Manager
 
     public function bagColor($request, $response)
     {
-        $memberid = $request->getAttribute('memberid');
+        $mid = trim($request->getAttribute('memberid'));
+        $a1 = trim($request->getAttribute('age1'));
+        $a2 = trim($request->getAttribute('age2'));
+
+        if (!empty($mid)) {
+            $sql = "SELECT * FROM bagcolortb WHERE memberid = ? AND (age = ? OR age = ?)";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$mid, $a1, $a2]);
+            $arrObs = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            $arrx = array();
+            foreach ($arrObs as $obs) {
+                $arrx[] = array(
+                    'bag_id' => $obs['bag_id'],
+                    'memberid' => $obs['memberid'],
+                    'age' => (int) $obs['age'],
+                    'bag_color1' => $obs['bag_color1'],
+                    'bag_color2' => $obs['bag_color2'],
+                    'bag_color3' => $obs['bag_color3'],
+                    'bag_color4' => $obs['bag_color4'],
+                    'bag_color5' => $obs['bag_color5'],
+                    'bag_color6' => $obs['bag_color6'],
+                    'bag_desc' => $obs['bag_desc']
+                );
+            }
+            $response->getBody()->write(json_encode(array('activity' => 'success', 'member_bagcolor' => $arrx)));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+        $response->getBody()->write(json_encode(array('activity' => 'fail', 'member_bagcolor' => null)));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+    public function _ignore_bagColor($request, $response)
+    {
+        // รับค่าและตัดช่องว่างที่อาจติดมา
+        $memberid = trim($request->getAttribute('memberid'));
         $age1 = (int) $request->getAttribute('age1');
         $age2 = (int) $request->getAttribute('age2');
 
         if (!empty($memberid)) {
-            $sql = "SELECT * FROM bagcolortb WHERE memberid = '$memberid' && (age = '$age1' || age = '$age2')";
+            // ใช้ ? แทนการใส่ตัวแปรตรงๆ เพื่อความปลอดภัยและแม่นยำ
+            $sql = "SELECT * FROM bagcolortb WHERE TRIM(memberid) = ? AND (age = ? OR age = ?)";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$memberid, $age1, $age2]);
+            $rows = $stmt->fetchAll(\PDO::FETCH_OBJ);
 
-            $result = $this->db->prepare($sql);
-            $result->execute();
-            $arrObs = $result->fetchAll(\PDO::FETCH_OBJ);
-
-            if (is_array($arrObs)) {
-                if (count($arrObs) == 1) {
-                    foreach ($arrObs as $obs) {
-                        $oldAge = $age1 - 1;
-                        $sql = "UPDATE bagcolortb SET bagcolortb.age = '$age1', bagcolortb.bag_color1 = '$obs->bag_color1', bagcolortb.bag_color2 = '$obs->bag_color2', bagcolortb.bag_color3 = '$obs->bag_color3', bagcolortb.bag_color4 = '$obs->bag_color4', bagcolortb.bag_color5 = '$obs->bag_color5', bagcolortb.bag_color6 = '$obs->bag_color6' WHERE bagcolortb.memberid = '$memberid' && bagcolortb.age = '$oldAge'";
-                        $result = $this->db->prepare($sql);
-                        $result->execute();
-
-                        $sql = "UPDATE bagcolortb SET bagcolortb.age = '$age2', bagcolortb.bag_color1 = '#FFFFFF', bagcolortb.bag_color2 = '#FFFFFF', bagcolortb.bag_color3 = '#FFFFFF', bagcolortb.bag_color4 = '#FFFFFF', bagcolortb.bag_color5 = '#FFFFFF', bagcolortb.bag_color6 = '#FFFFFF' WHERE bagcolortb.bag_id = '$obs->bag_id'";
-                        $result = $this->db->prepare($sql);
-                        $result->execute();
-                    }
-                }
-
-                $sql = "SELECT * FROM bagcolortb WHERE memberid = '$memberid' && (age = '$age1' || age = '$age2')";
-                $result = $this->db->prepare($sql);
-                $result->execute();
-                $arrObs = $result->fetchAll(\PDO::FETCH_OBJ);
-
-                $arrx = array();
-                foreach ($arrObs as $obs) {
-                    $realAge = (int) $obs->age;
-                    array_push($arrx, array('bag_id' => $obs->bag_id, 'memberid' => $obs->memberid, 'age' => $realAge, 'bag_color1' => $obs->bag_color1, 'bag_color2' => $obs->bag_color2, 'bag_color3' => $obs->bag_color3, 'bag_color4' => $obs->bag_color4, 'bag_color5' => $obs->bag_color5, 'bag_color6' => $obs->bag_color6, 'bag_desc' => $obs->bag_desc));
-                }
-
-                $response->getBody()->write(json_encode(array('activity' => 'success', 'member_bagcolor' => $arrx)));
-                return $response->withHeader('Content-Type', 'application/json');
+            $arrx = array();
+            foreach ($rows as $obs) {
+                array_push($arrx, array(
+                    'bag_id' => $obs->bag_id,
+                    'memberid' => $obs->memberid,
+                    'age' => (int) $obs->age,
+                    'bag_color1' => $obs->bag_color1,
+                    'bag_color2' => $obs->bag_color2,
+                    'bag_color3' => $obs->bag_color3,
+                    'bag_color4' => $obs->bag_color4,
+                    'bag_color5' => $obs->bag_color5,
+                    'bag_color6' => $obs->bag_color6,
+                    'bag_desc' => $obs->bag_desc
+                ));
             }
+
+            // เพิ่ม debug_info เพื่อให้เราเห็นว่า PHP ได้ค่าอะไรมา
+            $resData = array(
+                'activity' => 'success',
+                'debug_info' => "MID:[$memberid] A1:[$age1] A2:[$age2]",
+                'member_bagcolor' => $arrx
+            );
+            $response->getBody()->write(json_encode($resData));
+            return $response->withHeader('Content-Type', 'application/json');
         }
 
         $response->getBody()->write(json_encode(array('activity' => 'fail', 'member_bagcolor' => null)));
@@ -592,23 +719,50 @@ class UserController extends Manager
 
     public function updateFcmToken($request, $response)
     {
-        $body = $request->getParsedBody();
-        $memberid = filter_var($body['memberid'] ?? '', FILTER_SANITIZE_STRING);
-        $token = filter_var($body['token'] ?? '', FILTER_SANITIZE_STRING);
+        // Prevent PHP warnings from breaking JSON output
+        error_reporting(0);
 
-        if (!empty($memberid)) {
-            $sql = "UPDATE membertb SET fcm_token = :token WHERE memberid = :mid";
-            $stmt = $this->db->prepare($sql);
-            // Use empty string or NULL if token is empty
-            $tokenVal = !empty($token) ? $token : null;
-            if ($stmt->execute([':token' => $tokenVal, ':mid' => $memberid])) {
-                $response->getBody()->write(json_encode(['status' => 'success']));
-            } else {
-                $response->getBody()->write(json_encode(['status' => 'fail', 'message' => 'database error']));
+        try {
+            $rawInput = file_get_contents('php://input');
+            file_put_contents('/home/tayap/ananya-php/public/fcm_debug.txt', date("Y-m-d H:i:s") . " RAW INPUT: " . substr($rawInput, 0, 500) . "\n", FILE_APPEND);
+
+            $body = $request->getParsedBody();
+            file_put_contents('/home/tayap/ananya-php/public/fcm_debug.txt', date("Y-m-d H:i:s") . " PARSED BODY: " . print_r($body, true) . "\n", FILE_APPEND);
+
+            // Fallback for empty body parsing
+            if (!$body) {
+                $input = file_get_contents('php://input');
+                $body = json_decode($input, true);
             }
-        } else {
-            $response->getBody()->write(json_encode(['status' => 'fail', 'message' => 'missing memberid']));
+
+            // Avoid FILTER_SANITIZE_STRING as it is deprecated in PHP 8.1+
+            $memberid = isset($body['memberid']) ? trim($body['memberid']) : '';
+            $token = isset($body['token']) ? trim($body['token']) : '';
+
+            file_put_contents('/home/tayap/ananya-php/public/fcm_debug.txt', date("Y-m-d H:i:s") . " MEMBERID: $memberid, TOKEN: " . substr($token, 0, 20) . "...\n", FILE_APPEND);
+
+            if (!empty($memberid)) {
+                $sql = "UPDATE membertb SET fcm_token = :token WHERE memberid = :mid";
+                $stmt = $this->db->prepare($sql);
+
+                // Use empty string or NULL if token is empty
+                $tokenVal = !empty($token) ? $token : null;
+
+                $res = $stmt->execute([':token' => $tokenVal, ':mid' => $memberid]);
+                file_put_contents('/home/tayap/ananya-php/public/fcm_debug.txt', date("Y-m-d H:i:s") . " SQL EXEC Result: " . ($res ? "OK" : "FAIL") . " | RowCount: " . $stmt->rowCount() . "\n", FILE_APPEND);
+
+                if ($res) {
+                    $response->getBody()->write(json_encode(['status' => 'success']));
+                } else {
+                    $response->getBody()->write(json_encode(['status' => 'fail', 'message' => 'database error']));
+                }
+            } else {
+                $response->getBody()->write(json_encode(['status' => 'fail', 'message' => 'missing memberid']));
+            }
+        } catch (\Throwable $e) {
+            $response->getBody()->write(json_encode(['status' => 'error', 'message' => $e->getMessage()]));
         }
+
         return $response->withHeader('Content-Type', 'application/json');
     }
 }
