@@ -66,25 +66,49 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
+        // ⚡ Bolt: Prevent N+1 query. Instead of querying for each day's color in a loop,
+        // we fetch all required colors in a single query using an IN clause,
+        // then reconstruct the original order and duplicates in-memory.
+        // This reduces database round-trips from N (length of the day string) to 1.
+        if (empty($dayListStr)) {
+            $response->getBody()->write(json_encode(array('cloth_color' => [])));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+
+        $dayChars = str_split($dayListStr);
+        $uniqueDayChars = array_unique($dayChars);
+
+        // Create a list of placeholders for the IN clause to prevent SQL injection.
+        $placeholders = implode(',', array_fill(0, count($uniqueDayChars), '?'));
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+
+        $result = $this->db->prepare($sql);
+        $finalColors = [];
+
+        if ($result) {
+            // We pass the unique characters to the query.
+            $result->execute(array_values($uniqueDayChars));
+            $dbColors = $result->fetchAll(\PDO::FETCH_ASSOC);
+
+            if (is_array($dbColors)) {
+                // Create a map of colorid -> color data for quick lookups.
+                $colorMap = [];
+                foreach ($dbColors as $color) {
+                    $colorMap[$color['colorid']] = $color;
+                }
+
+                // Reconstruct the original list, preserving order and duplicates.
+                foreach ($dayChars as $char) {
+                    if (isset($colorMap[$char])) {
+                        $finalColors[] = $colorMap[$char];
+                    }
                 }
             }
         }
 
-        $response->getBody()->write(json_encode(array('cloth_color' => $strColor)));
+        $response->getBody()->write(json_encode(array('cloth_color' => $finalColors)));
         return $response->withHeader('Content-Type', 'application/json');
     }
 
