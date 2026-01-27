@@ -92,6 +92,24 @@
             color: #3CA7E6;
             text-decoration: none;
         }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            font-size: 1.2rem;
+            color: #555;
+            line-height: 1;
+        }
     </style>
 </head>
 
@@ -122,13 +140,15 @@
                     <small id="username-success"
                         style="color: #28a745; display: none; font-size: 0.85rem; margin-top: 4px;">ชื่อผู้ใช้นี้ว่าง</small>
                 </div>
-                <div class="form-group">
+                <div class="form-group password-wrapper">
                     <label for="password">รหัสผ่าน</label>
                     <input type="password" id="password" name="password" required>
+                    <button type="button" id="togglePassword" class="toggle-password" aria-label="Show password">👁️</button>
                 </div>
-                <div class="form-group">
+                <div class="form-group password-wrapper">
                     <label for="confirm_password">ยืนยันรหัสผ่าน</label>
                     <input type="password" id="confirm_password" name="confirm_password" required>
+                    <button type="button" id="toggleConfirmPassword" class="toggle-password" aria-label="Show password">👁️</button>
                     <small id="password-error"
                         style="color: #dc2626; display: none; font-size: 0.85rem; margin-top: 4px;">รหัสผ่านไม่ตรงกัน</small>
                 </div>
@@ -140,55 +160,80 @@
         </div>
     </div>
     <script>
-        const form = document.getElementById('registerForm');
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        const confirmInput = document.getElementById('confirm_password');
-        const usernameError = document.getElementById('username-error');
-        const usernameSuccess = document.getElementById('username-success');
-        const passwordError = document.getElementById('password-error');
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('registerForm');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const confirmInput = document.getElementById('confirm_password');
+            const usernameError = document.getElementById('username-error');
+            const usernameSuccess = document.getElementById('username-success');
+            const passwordError = document.getElementById('password-error');
 
-        usernameInput.addEventListener('blur', function () {
-            const val = this.value.trim();
-            if (val.length === 0) return;
+            if (usernameInput) {
+                usernameInput.addEventListener('blur', function() {
+                    const val = this.value.trim();
+                    if (val.length === 0) return;
 
-            fetch('/web/api/check-username?username=' + encodeURIComponent(val))
-                .then(res => res.json())
-                .then(data => {
-                    if (data.exists) {
-                        usernameError.style.display = 'block';
-                        usernameSuccess.style.display = 'none';
-                        usernameInput.style.borderColor = '#dc2626';
-                    } else {
-                        usernameError.style.display = 'none';
-                        usernameSuccess.style.display = 'block';
-                        usernameInput.style.borderColor = '#28a745';
-                    }
-                })
-                .catch(err => console.error(err));
-        });
-
-        form.addEventListener('submit', function (e) {
-            let valid = true;
-
-            // Check passwords
-            if (passwordInput.value !== confirmInput.value) {
-                passwordError.style.display = 'block';
-                confirmInput.style.borderColor = '#dc2626';
-                valid = false;
-            } else {
-                passwordError.style.display = 'none';
+                    fetch('/web/api/check-username?username=' + encodeURIComponent(val))
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.exists) {
+                                usernameError.style.display = 'block';
+                                usernameSuccess.style.display = 'none';
+                                usernameInput.style.borderColor = '#dc2626';
+                            } else {
+                                usernameError.style.display = 'none';
+                                usernameSuccess.style.display = 'block';
+                                usernameInput.style.borderColor = '#28a745';
+                            }
+                        })
+                        .catch(err => console.error(err));
+                });
             }
 
-            if (!valid) e.preventDefault();
-        });
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    let valid = true;
+                    if (passwordInput.value !== confirmInput.value) {
+                        passwordError.style.display = 'block';
+                        confirmInput.style.borderColor = '#dc2626';
+                        valid = false;
+                    } else {
+                        passwordError.style.display = 'none';
+                    }
+                    if (!valid) e.preventDefault();
+                });
+            }
 
-        confirmInput.addEventListener('input', () => {
-            if (passwordInput.value === confirmInput.value) {
-                passwordError.style.display = 'none';
-                confirmInput.style.borderColor = '#28a745';
-            } else {
-                confirmInput.style.borderColor = '#ddd';
+            if (confirmInput) {
+                confirmInput.addEventListener('input', () => {
+                    if (passwordInput.value === confirmInput.value) {
+                        passwordError.style.display = 'none';
+                        confirmInput.style.borderColor = '#28a745';
+                    } else {
+                        confirmInput.style.borderColor = '#ddd';
+                    }
+                });
+            }
+
+            const togglePasswordButton = document.getElementById('togglePassword');
+            if (togglePasswordButton) {
+                togglePasswordButton.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    this.textContent = type === 'password' ? '👁️' : '🙈';
+                    this.setAttribute('aria-label', type === 'password' ? 'Show password' : 'Hide password');
+                });
+            }
+
+            const toggleConfirmPasswordButton = document.getElementById('toggleConfirmPassword');
+            if (toggleConfirmPasswordButton) {
+                toggleConfirmPasswordButton.addEventListener('click', function() {
+                    const type = confirmInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    confirmInput.setAttribute('type', type);
+                    this.textContent = type === 'password' ? '👁️' : '🙈';
+                    this.setAttribute('aria-label', type === 'password' ? 'Show password' : 'Hide password');
+                });
             }
         });
     </script>
