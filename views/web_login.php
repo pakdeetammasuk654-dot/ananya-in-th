@@ -98,6 +98,24 @@
             color: #3CA7E6;
             text-decoration: none;
         }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            font-size: 1.2rem;
+            color: #555;
+            line-height: 1;
+        }
     </style>
 </head>
 
@@ -114,9 +132,10 @@
                     <label for="username">ชื่อผู้ใช้</label>
                     <input type="text" id="username" name="username" required>
                 </div>
-                <div class="form-group">
+                <div class="form-group password-wrapper">
                     <label for="password">รหัสผ่าน</label>
                     <input type="password" id="password" name="password" required>
+                    <button type="button" id="togglePassword" class="toggle-password" aria-label="Show password">👁️</button>
                 </div>
                 <button type="submit">เข้าสู่ระบบ</button>
             </form>
@@ -125,6 +144,18 @@
             </div>
         </div>
     </div>
+    <script>
+        const passwordInput = document.getElementById('password');
+        const togglePasswordButton = document.getElementById('togglePassword');
+
+        togglePasswordButton.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+
+            this.textContent = type === 'password' ? '👁️' : '🙈';
+            this.setAttribute('aria-label', type === 'password' ? 'Show password' : 'Hide password');
+        });
+    </script>
 </body>
 
 </html>

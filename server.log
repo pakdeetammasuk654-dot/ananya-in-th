@@ -1,0 +1,7 @@
+[Tue Jan 27 22:02:55 2026] PHP 8.3.6 Development Server (http://0.0.0.0:8080) started
+[Tue Jan 27 22:03:07 2026] 127.0.0.1:56426 Accepted
+[Tue Jan 27 22:03:07 2026] 127.0.0.1:56426 [200]: GET /web/login
+[Tue Jan 27 22:03:07 2026] 127.0.0.1:56426 Closing
+[Tue Jan 27 22:03:07 2026] 127.0.0.1:56442 Accepted
+[Tue Jan 27 22:03:07 2026] 127.0.0.1:56442 [200]: GET /web/register
+[Tue Jan 27 22:03:07 2026] 127.0.0.1:56442 Closing
