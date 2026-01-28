@@ -66,20 +66,35 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
+        // Optimization: Prevent N+1 query problem.
+        // Instead of querying for each day's color in a loop, fetch all colors in a single query.
+        // This is much more efficient, especially for multiple days.
+        if (empty($dayListStr)) {
+            $response->getBody()->write(json_encode(array('cloth_color' => [])));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+
+        $dayIds = str_split($dayListStr);
+        // Ensure day IDs are unique to prevent redundant processing and potential issues.
+        $uniqueDayIds = array_unique($dayIds);
+        // Create placeholders for the IN clause to prevent SQL injection.
+        $placeholders = implode(',', array_fill(0, count($uniqueDayIds), '?'));
+
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+        $result = $this->db->prepare($sql);
+
+        $strColor = array();
+        if ($result) {
+            $result->execute($uniqueDayIds);
+            // Fetch all results into an associative array, using colorid as the key for easy lookup.
+            $colorsById = $result->fetchAll(\PDO::FETCH_ASSOC | \PDO::FETCH_UNIQUE);
+
+            // Reconstruct the color list in the original order, including duplicates.
+            foreach ($dayIds as $dayId) {
+                if (isset($colorsById[$dayId])) {
+                    $strColor[] = $colorsById[$dayId];
                 }
             }
         }
