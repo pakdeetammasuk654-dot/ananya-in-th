@@ -107,15 +107,15 @@
             <?php endif; ?>
             <form action="/web/register" method="POST" id="registerForm">
                 <div class="form-group">
-                    <label for="realname">ชื่อจริง</label>
+                    <label for="realname">ชื่อจริง <span style="color: red;">*</span></label>
                     <input type="text" id="realname" name="realname" required>
                 </div>
                 <div class="form-group">
-                    <label for="surname">นามสกุล</label>
+                    <label for="surname">นามสกุล <span style="color: red;">*</span></label>
                     <input type="text" id="surname" name="surname" required>
                 </div>
                 <div class="form-group">
-                    <label for="username">ชื่อผู้ใช้</label>
+                    <label for="username">ชื่อผู้ใช้ <span style="color: red;">*</span></label>
                     <input type="text" id="username" name="username" required>
                     <small id="username-error"
                         style="color: #dc2626; display: none; font-size: 0.85rem; margin-top: 4px;">ชื่อผู้ใช้นี้ถูกใช้แล้ว</small>
@@ -123,11 +123,11 @@
                         style="color: #28a745; display: none; font-size: 0.85rem; margin-top: 4px;">ชื่อผู้ใช้นี้ว่าง</small>
                 </div>
                 <div class="form-group">
-                    <label for="password">รหัสผ่าน</label>
+                    <label for="password">รหัสผ่าน <span style="color: red;">*</span></label>
                     <input type="password" id="password" name="password" required>
                 </div>
                 <div class="form-group">
-                    <label for="confirm_password">ยืนยันรหัสผ่าน</label>
+                    <label for="confirm_password">ยืนยันรหัสผ่าน <span style="color: red;">*</span></label>
                     <input type="password" id="confirm_password" name="confirm_password" required>
                     <small id="password-error"
                         style="color: #dc2626; display: none; font-size: 0.85rem; margin-top: 4px;">รหัสผ่านไม่ตรงกัน</small>

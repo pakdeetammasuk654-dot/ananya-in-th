@@ -111,11 +111,11 @@
             <?php endif; ?>
             <form action="/web/login" method="POST">
                 <div class="form-group">
-                    <label for="username">ชื่อผู้ใช้</label>
+                    <label for="username">ชื่อผู้ใช้ <span style="color: red;">*</span></label>
                     <input type="text" id="username" name="username" required>
                 </div>
                 <div class="form-group">
-                    <label for="password">รหัสผ่าน</label>
+                    <label for="password">รหัสผ่าน <span style="color: red;">*</span></label>
                     <input type="password" id="password" name="password" required>
                 </div>
                 <button type="submit">เข้าสู่ระบบ</button>
