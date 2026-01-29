@@ -66,25 +66,53 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
+        // If the input is empty or null, return an empty array.
+        if (empty($dayListStr)) {
+            $response->getBody()->write(json_encode(['cloth_color' => []]));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+
+        // ⚡ Bolt: This optimization replaces an N+1 query problem with a single, efficient query.
+        // Instead of querying the database for each day's color inside a loop, we fetch all
+        // required colors at once using an IN clause. This significantly reduces database
+        // round-trips, especially for longer input strings.
+        //
+        // 📊 Impact: For an input of 7 days, this reduces DB queries from 7 to 1.
+        // 🔬 Measurement: Verified by observing logs or using a query profiler.
+        $colorIds = str_split($dayListStr);
+
+        // Get unique IDs for an efficient DB query.
+        $uniqueColorIds = array_unique($colorIds);
+
+        // Create placeholders for the IN clause, e.g., ?,?,?
+        $placeholders = implode(',', array_fill(0, count($uniqueColorIds), '?'));
+
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+
+        $strColor = [];
+        if ($stmt) {
+            // PDO expects a simple, 0-indexed array for execute.
+            $stmt->execute(array_values($uniqueColorIds));
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // The original API returns items in the order of the input string and allows duplicates.
+            // We build a map for quick lookups and then reconstruct the final array to preserve that order.
+            $colorMap = [];
+            foreach ($rows as $row) {
+                $colorMap[$row['colorid']] = $row;
+            }
+
+            foreach ($colorIds as $id) {
+                if (isset($colorMap[$id])) {
+                    $strColor[] = $colorMap[$id];
                 }
             }
         }
 
-        $response->getBody()->write(json_encode(array('cloth_color' => $strColor)));
+        $response->getBody()->write(json_encode(['cloth_color' => $strColor]));
         return $response->withHeader('Content-Type', 'application/json');
     }
 
