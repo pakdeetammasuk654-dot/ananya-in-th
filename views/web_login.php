@@ -45,6 +45,12 @@
             color: #666;
         }
 
+        .required-indicator {
+            color: #dc2626;
+            font-weight: bold;
+            margin-left: 0.25rem;
+        }
+
         input {
             width: 100%;
             padding: 0.75rem;
@@ -111,11 +117,11 @@
             <?php endif; ?>
             <form action="/web/login" method="POST">
                 <div class="form-group">
-                    <label for="username">ชื่อผู้ใช้</label>
+                    <label for="username">ชื่อผู้ใช้<span class="required-indicator">*</span></label>
                     <input type="text" id="username" name="username" required>
                 </div>
                 <div class="form-group">
-                    <label for="password">รหัสผ่าน</label>
+                    <label for="password">รหัสผ่าน<span class="required-indicator">*</span></label>
                     <input type="password" id="password" name="password" required>
                 </div>
                 <button type="submit">เข้าสู่ระบบ</button>
