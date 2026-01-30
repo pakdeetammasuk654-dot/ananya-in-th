@@ -66,21 +66,26 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
-                }
+        // Bolt Optimization: Replace N+1 query loop with a single query.
+        // We fetch all colors at once since there are only 7-8 possible colors.
+        // This reduces DB roundtrips and significantly improves performance for long date ranges.
+        $sql = "SELECT * FROM colortb";
+        $stmt = $this->db->query($sql);
+        $allColors = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $colorMap = [];
+        foreach ($allColors as $color) {
+            $colorMap[$color['colorid']] = $color;
+        }
+
+        $strColor = array();
+        for ($i = 0; $i < strlen($dayListStr); $i++) {
+            $char = $dayListStr[$i];
+            if (isset($colorMap[$char])) {
+                // Preserve duplicates and order as per original implementation
+                $strColor[] = $colorMap[$char];
             }
         }
 
