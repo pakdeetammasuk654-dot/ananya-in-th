@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Ananya</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: sans-serif;
@@ -112,11 +113,17 @@
             <form action="/web/login" method="POST">
                 <div class="form-group">
                     <label for="username">ชื่อผู้ใช้</label>
-                    <input type="text" id="username" name="username" required>
+                    <input type="text" id="username" name="username" required autocomplete="username">
                 </div>
                 <div class="form-group">
                     <label for="password">รหัสผ่าน</label>
-                    <input type="password" id="password" name="password" required>
+                    <div style="position: relative;">
+                        <input type="password" id="password" name="password" required autocomplete="current-password" style="padding-right: 40px;">
+                        <button type="button" id="togglePassword" aria-label="แสดงรหัสผ่าน"
+                            style="position: absolute; right: 0; top: 0; height: 100%; width: 40px; margin: 0; background: none; color: #666; border: none; cursor: pointer;">
+                            <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit">เข้าสู่ระบบ</button>
             </form>
@@ -125,6 +132,16 @@
             </div>
         </div>
     </div>
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const pwd = document.getElementById('password');
+            const icon = document.getElementById('eyeIcon');
+            const isPass = pwd.type === 'password';
+            pwd.type = isPass ? 'text' : 'password';
+            icon.className = isPass ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+            this.setAttribute('aria-label', isPass ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน');
+        });
+    </script>
 </body>
 
 </html>
