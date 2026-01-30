@@ -20265,7 +20265,8 @@ ALTER TABLE `memberuse`
 ALTER TABLE `miracledo`
   ADD PRIMARY KEY (`miraid`),
   ADD KEY `dayx` (`dayx`),
-  ADD KEY `activity` (`activity`);
+  ADD KEY `activity` (`activity`),
+  ADD KEY `activity_dayx_dayy` (`activity`,`dayx`,`dayy`);
 
 --
 -- Indexes for table `miracledo_desc`
