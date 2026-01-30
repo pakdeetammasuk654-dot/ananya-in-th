@@ -66,25 +66,28 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
-                }
-            }
+        if (empty($dayListStr)) {
+            $response->getBody()->write(json_encode(array('cloth_color' => [])));
+            return $response->withHeader('Content-Type', 'application/json');
         }
 
-        $response->getBody()->write(json_encode(array('cloth_color' => $strColor)));
+        // Convert the string of numbers into an array of integers.
+        $colorIds = str_split($dayListStr);
+
+        // Create a string of question mark placeholders for the IN clause.
+        $placeholders = implode(',', array_fill(0, count($colorIds), '?'));
+
+        // ⚡ Bolt: Replaced N+1 query with a single IN clause.
+        // This is much more performant as it only makes one database call
+        // instead of one for each color ID.
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($colorIds);
+        $colors = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $response->getBody()->write(json_encode(array('cloth_color' => $colors ?: [])));
         return $response->withHeader('Content-Type', 'application/json');
     }
 
