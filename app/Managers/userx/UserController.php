@@ -66,20 +66,33 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
         $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
+        $numbDays = (string) $dayListStr;
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
+        if ($numbDays !== '') {
+            // Optimization: Replace N+1 queries with a single batch fetch.
+            // 1. Split input into individual characters (IDs).
+            $chars = str_split($numbDays);
+            $uniqueChars = array_unique($chars);
+
+            // 2. Fetch all matching colors in one database roundtrip.
+            $placeholders = implode(',', array_fill(0, count($uniqueChars), '?'));
+            $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(array_values($uniqueChars));
+            $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // 3. Create a map for O(1) in-memory lookups.
+            $colorMap = [];
+            foreach ($results as $row) {
+                $colorMap[$row['colorid']] = $row;
+            }
+
+            // 4. Reconstruct the response array maintaining original order and duplicates.
+            foreach ($chars as $char) {
+                if (isset($colorMap[$char])) {
+                    $strColor[] = $colorMap[$char];
                 }
             }
         }
