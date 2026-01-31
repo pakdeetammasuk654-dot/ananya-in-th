@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Ananya</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: sans-serif;
@@ -45,29 +46,15 @@
             color: #666;
         }
 
-        input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        button {
-            width: 100%;
-            padding: 0.75rem;
-            background-color: #3CA7E6;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-top: 1rem;
-        }
-
-        button:hover {
-            background-color: #2b8ac4;
-        }
+        input { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; transition: all .2s; }
+        input:focus { outline: 2px solid #3CA7E6; outline-offset: 1px; border-color: transparent; }
+        button { width: 100%; padding: 0.75rem; background-color: #3CA7E6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; margin-top: 1rem; transition: all .2s; }
+        button:hover { background-color: #2b8ac4; }
+        button:focus-visible { outline: 2px solid #3CA7E6; outline-offset: 2px; }
+        .pw-wrap { position: relative; display: flex; align-items: center; }
+        .pw-wrap input { padding-right: 2.75rem; }
+        .pw-tog { position: absolute; right: .75rem; background: none; border: none; color: #666; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; }
+        .pw-tog:hover, .pw-tog:focus { color: #3CA7E6; outline: none; }
 
         .alert {
             padding: 0.75rem;
@@ -116,10 +103,18 @@
                 </div>
                 <div class="form-group">
                     <label for="password">รหัสผ่าน</label>
-                    <input type="password" id="password" name="password" required>
+                    <div class="pw-wrap"><input type="password" id="password" name="password" required><button type="button" class="pw-tog" id="pwTog" aria-label="แสดงรหัสผ่าน"><i class="fa-solid fa-eye" id="pwIcon"></i></button></div>
                 </div>
                 <button type="submit">เข้าสู่ระบบ</button>
             </form>
+            <script>
+                document.getElementById('pwTog').addEventListener('click', function() {
+                    const i = document.getElementById('password'), c = document.getElementById('pwIcon');
+                    const isP = i.type === 'password'; i.type = isP ? 'text' : 'password';
+                    c.className = isP ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+                    this.setAttribute('aria-label', isP ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน');
+                });
+            </script>
             <div class="link">
                 ยังไม่มีบัญชี? <a href="/web/register">สมัครสมาชิกที่นี่</a>
             </div>
