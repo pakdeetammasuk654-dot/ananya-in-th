@@ -1,0 +1,18 @@
+[Unit]
+Description=Ananya Go Application
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=tayap
+WorkingDirectory=/home/tayap/ananya-go
+ExecStart=/home/tayap/ananya-go/ananya-go
+Restart=always
+Environment=DB_HOST=localhost
+Environment=DB_USER=tayap
+Environment=DB_PASSWORD=IntelliP24.X
+Environment=DB_NAME=tayap
+Environment=DB_PORT=5432
+
+[Install]
+WantedBy=multi-user.target
