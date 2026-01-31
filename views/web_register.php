@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 
 <head>
     <meta charset="UTF-8">
@@ -51,6 +51,13 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: 2px solid #3CA7E6;
+            outline-offset: 1px;
+            border-color: transparent;
         }
 
         button {
@@ -63,10 +70,16 @@
             cursor: pointer;
             font-size: 1rem;
             margin-top: 1rem;
+            transition: all 0.2s;
         }
 
         button:hover {
             background-color: #2b8ac4;
+        }
+
+        button:focus-visible {
+            outline: 2px solid #3CA7E6;
+            outline-offset: 2px;
         }
 
         .alert {
