@@ -66,21 +66,32 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
+        if (empty($dayListStr)) {
+            $response->getBody()->write(json_encode(array('cloth_color' => [])));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
-                }
+        // Optimized: Solve N+1 query problem by fetching all unique color IDs in a single query
+        $uniqueChars = array_unique(str_split($dayListStr));
+        $placeholders = implode(',', array_fill(0, count($uniqueChars), '?'));
+
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($uniqueChars);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Use O(1) map lookup for efficient result reconstruction
+        $colorMap = [];
+        foreach ($rows as $row) {
+            $colorMap[$row['colorid']] = $row;
+        }
+
+        $strColor = array();
+        for ($i = 0; $i < strlen($dayListStr); $i++) {
+            $char = $dayListStr[$i];
+            if (isset($colorMap[$char])) {
+                $strColor[] = $colorMap[$char];
             }
         }
 

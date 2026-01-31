@@ -312,16 +312,19 @@ $app->group('/web', function (RouteCollectorProxy $group) use ($container) {
                 foreach ($files as $f) {
                     if ($f !== '.' && $f !== '..' && !is_dir("$dir/$f")) {
                         if (preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $f)) {
+                            // Optimized: Use stat() to reduce I/O system calls by half
+                            $stat = stat("$dir/$f");
                             $images[] = [
                                 'name' => $f,
                                 'url' => '/uploads/' . $f,
-                                'size' => filesize("$dir/$f"),
-                                'time' => filemtime("$dir/$f")
+                                'size' => $stat['size'],
+                                'time' => $stat['mtime']
                             ];
                         }
                     }
                 }
             }
+
             // Sort by Date (Newest first)
             usort($images, function ($a, $b) {
                 return $b['time'] - $a['time'];
