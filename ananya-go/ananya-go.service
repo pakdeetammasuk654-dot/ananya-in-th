@@ -1,0 +1,21 @@
+[Unit]
+Description=Ananya Go Backend Service
+After=network.target
+
+[Service]
+User=tayap
+Group=tayap
+WorkingDirectory=/home/tayap/apps/ananya-go
+ExecStart=/home/tayap/apps/ananya-go/ananya-go
+Restart=always
+
+# Environment variables for database
+Environment=DB_HOST=localhost
+Environment=DB_USER=tayap
+Environment=DB_PASSWORD=IntelliP24.X
+Environment=DB_NAME=tayap
+Environment=DB_PORT=5432
+Environment=GIN_MODE=release
+
+[Install]
+WantedBy=multi-user.target
