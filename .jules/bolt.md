@@ -1,0 +1,3 @@
+## 2024-05-23 - [N+1 SQL Queries in dressColor]
+**Learning:** Identified a classic N+1 query bottleneck where multiple database calls were made in a loop based on input length. Optimizing this with an `IN` query and in-memory mapping is effective, but requires careful handling of duplicates and order to avoid breaking changes in the API response. Additionally, using prepared statements for the batch query improves security.
+**Action:** Always check for loops containing database queries and replace them with batch operations while ensuring the response format remains identical to the original implementation.
