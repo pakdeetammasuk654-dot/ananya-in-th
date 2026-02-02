@@ -1,15 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Ananya</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Sarabun:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: sans-serif;
+            font-family: 'Sarabun', sans-serif;
             background-color: #f0f2f5;
             margin: 0;
+        }
+
+        h2, button, label {
+            font-family: 'Kanit', sans-serif;
         }
 
         .main-wrapper {
@@ -51,6 +56,37 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        input:focus-visible, button:focus-visible {
+            outline: 2px solid #3CA7E6;
+            outline-offset: 2px;
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .password-input {
+            padding-right: 2.5rem !important;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            width: auto !important;
+            padding: 4px !important;
+            margin: 0 !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         button {
@@ -116,7 +152,12 @@
                 </div>
                 <div class="form-group">
                     <label for="password">รหัสผ่าน</label>
-                    <input type="password" id="password" name="password" required>
+                    <div class="password-container">
+                        <input type="password" id="password" name="password" class="password-input" required>
+                        <button type="button" class="toggle-password" data-target="password" aria-label="แสดงรหัสผ่าน">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit">เข้าสู่ระบบ</button>
             </form>
@@ -125,6 +166,26 @@
             </div>
         </div>
     </div>
+    <script>
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const passwordInput = document.getElementById(targetId);
+                const icon = this.querySelector('i');
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                    this.setAttribute('aria-label', 'ซ่อนรหัสผ่าน');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                    this.setAttribute('aria-label', 'แสดงรหัสผ่าน');
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

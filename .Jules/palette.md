@@ -1,0 +1,3 @@
+## 2025-02-02 - [Password Visibility Toggle & Accessibility]
+**Learning:** For a localized application (Thai), accessibility extends beyond just ARIA attributes; it includes using the correct `html` `lang` attribute and localized ARIA labels (e.g., 'แสดงรหัสผ่าน' instead of 'Show password') to ensure a consistent experience for screen reader users. Additionally, when adding interactive icons inside input fields, providing sufficient `padding-right` is critical to prevent user text from overlapping with the icon.
+**Action:** Always verify `html` `lang` matches the content, provide localized ARIA labels for interactive elements, and ensure proper spacing for internal input icons.
