@@ -66,22 +66,37 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
+        if ($dayListStr === null || $dayListStr === '') {
+            $response->getBody()->write(json_encode(array('cloth_color' => array())));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
+        // Optimized: Solve N+1 problem by fetching all colors in one query
+        $chars = str_split($dayListStr);
+        $uniqueChars = array_unique($chars);
+        $placeholders = implode(',', array_fill(0, count($uniqueChars), '?'));
+
+        $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+        if ($stmt) {
+            $stmt->execute(array_values($uniqueChars));
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Create a map for O(1) lookup while preserving original order and duplicates
+            $colorMap = array();
+            foreach ($rows as $row) {
+                $colorMap[$row['colorid']] = $row;
+            }
+
+            $strColor = array();
+            foreach ($chars as $char) {
+                if (isset($colorMap[$char])) {
+                    $strColor[] = $colorMap[$char];
                 }
             }
+        } else {
+            $strColor = array();
         }
 
         $response->getBody()->write(json_encode(array('cloth_color' => $strColor)));
