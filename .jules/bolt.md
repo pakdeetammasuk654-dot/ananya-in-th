@@ -1,0 +1,3 @@
+## 2026-02-02 - [Optimizing N+1 queries in PHP while preserving duplicates]
+**Learning:** When optimizing N+1 query patterns in PHP, using `array_unique` and `WHERE IN (...)` is effective, but it's critical to maintain the original order and duplicate count. Using an in-memory map (associative array) to store results and then iterating over the original input array ensures the response remains identical to the unoptimized version. Additionally, avoid `empty()` when validating IDs that could be '0', as PHP treats '0' as empty.
+**Action:** Always use an in-memory map for re-ordering and use strict equality checks (`=== null || === ''`) instead of `empty()` for string-based identifiers.
