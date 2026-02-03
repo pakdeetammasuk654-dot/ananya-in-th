@@ -66,20 +66,39 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
+        /**
+         * ⚡ BOLT OPTIMIZATION: Resolved N+1 Query Bottleneck
+         * Problem: Original code queried the database for each character in the input string.
+         * Impact: Reduces database roundtrips from N to 1. For a typical 7-day request, this is an ~85% reduction.
+         * Complexity: O(1) database queries instead of O(N).
+         */
         $strColor = array();
-        $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
+        $numbDays = $request->getAttribute('days');
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
+        if (!empty($numbDays)) {
+            $chars = str_split((string)$numbDays);
+            $uniqueChars = array_values(array_unique($chars));
+
+            // Prepare placeholders for IN clause
+            $placeholders = implode(',', array_fill(0, count($uniqueChars), '?'));
+            $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+
+            $stmt = $this->db->prepare($sql);
+            if ($stmt) {
+                $stmt->execute($uniqueChars);
+                $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                // Map results by colorid for O(1) lookup
+                $colorMap = array();
+                foreach ($rows as $row) {
+                    $colorMap[$row['colorid']] = $row;
+                }
+
+                // Reconstruct results in original order, including duplicates
+                foreach ($chars as $char) {
+                    if (isset($colorMap[$char])) {
+                        array_push($strColor, $colorMap[$char]);
+                    }
                 }
             }
         }
