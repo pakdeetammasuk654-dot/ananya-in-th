@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 
 <head>
     <meta charset="UTF-8">
@@ -53,7 +53,7 @@
             box-sizing: border-box;
         }
 
-        button {
+        button[type="submit"] {
             width: 100%;
             padding: 0.75rem;
             background-color: #3CA7E6;
@@ -65,7 +65,7 @@
             margin-top: 1rem;
         }
 
-        button:hover {
+        button[type="submit"]:hover {
             background-color: #2b8ac4;
         }
 
@@ -124,11 +124,22 @@
                 </div>
                 <div class="form-group">
                     <label for="password">รหัสผ่าน</label>
-                    <input type="password" id="password" name="password" required>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" required>
+                        <button type="button" class="toggle-password" data-target="password" aria-label="แสดงรหัสผ่าน">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="confirm_password">ยืนยันรหัสผ่าน</label>
-                    <input type="password" id="confirm_password" name="confirm_password" required>
+                    <div class="password-wrapper">
+                        <input type="password" id="confirm_password" name="confirm_password" required>
+                        <button type="button" class="toggle-password" data-target="confirm_password"
+                            aria-label="แสดงรหัสผ่าน">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                     <small id="password-error"
                         style="color: #dc2626; display: none; font-size: 0.85rem; margin-top: 4px;">รหัสผ่านไม่ตรงกัน</small>
                 </div>
