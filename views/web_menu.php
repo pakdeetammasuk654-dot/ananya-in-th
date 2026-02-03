@@ -76,6 +76,39 @@ if ($is_wanpra_today) {
         transform: translateY(-2px);
     }
 
+    *:focus-visible {
+        outline: 2px solid #3CA7E6;
+        outline-offset: 2px;
+    }
+
+    /* Shared Password Toggle Styles */
+    .password-wrapper {
+        position: relative;
+    }
+
+    .password-wrapper input {
+        padding-right: 2.5rem !important;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 0;
+        top: 0;
+        height: 100%;
+        width: 2.5rem;
+        background: none !important;
+        border: none !important;
+        color: #666 !important;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 !important;
+        margin: 0 !important;
+        z-index: 10;
+        box-shadow: none !important;
+    }
+
     /* Mobile Toggle */
     .navbar-toggle {
         display: none;
@@ -171,7 +204,7 @@ if ($is_wanpra_today) {
         <i class="fa-solid fa-clover"></i> ananya.in.th
     </a>
 
-    <button class="navbar-toggle" id="menuToggle">
+    <button class="navbar-toggle" id="menuToggle" aria-label="เปิดเมนู">
         <i class="fa-solid fa-bars"></i>
     </button>
 
@@ -207,9 +240,33 @@ if ($is_wanpra_today) {
             if (menu.classList.contains('active')) {
                 icon.classList.remove('fa-bars');
                 icon.classList.add('fa-xmark');
+                toggle.setAttribute('aria-label', 'ปิดเมนู');
             } else {
                 icon.classList.remove('fa-xmark');
                 icon.classList.add('fa-bars');
+                toggle.setAttribute('aria-label', 'เปิดเมนู');
+            }
+        });
+
+        // Shared Password Toggle Logic
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.toggle-password');
+            if (btn) {
+                const targetId = btn.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const icon = btn.querySelector('i');
+
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                    btn.setAttribute('aria-label', 'ซ่อนรหัสผ่าน');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                    btn.setAttribute('aria-label', 'แสดงรหัสผ่าน');
+                }
             }
         });
 
