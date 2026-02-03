@@ -66,20 +66,38 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
+        $strColor = array();
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
+        if (!empty($dayListStr)) {
+            /**
+             * BOLT OPTIMIZATION: Solve N+1 query problem.
+             * Instead of querying the database for each character in a loop,
+             * we fetch all unique color IDs in a single query and then map them back.
+             * This reduces DB roundtrips from N (length of input string) to 1.
+             * Example: For a 7-character input, this reduces queries from 7 to 1.
+             */
+            $chars = str_split($dayListStr);
+            $uniqueChars = array_unique($chars);
+
+            if (count($uniqueChars) > 0) {
+                $placeholders = implode(',', array_fill(0, count($uniqueChars), '?'));
+                $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute(array_values($uniqueChars));
+                $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                // Create a map for O(1) lookup
+                $colorMap = [];
+                foreach ($rows as $row) {
+                    $colorMap[$row['colorid']] = $row;
+                }
+
+                // Map back to original list to preserve order and handle duplicates
+                foreach ($chars as $char) {
+                    if (isset($colorMap[$char])) {
+                        $strColor[] = $colorMap[$char];
+                    }
                 }
             }
         }
