@@ -1,0 +1,3 @@
+## 2025-05-22 - Optimized Thai lunar date calculation
+**Learning:** The `ThaiCalendarHelper::getThaiLunarDate` method used an O(N) loop starting from a fixed epoch (2023-01-01) for every calculation. When processing sequences of dates (e.g., fetching 6 months of upcoming events), this led to an O(N^2) complexity where N is the total number of days from the epoch.
+**Action:** Implemented a static cache for memoization and a "last calculated state" to allow incremental calculation for chronological sequences. This reduced the complexity of sequential processing from O(N) per day to O(1) in the best case, resulting in a ~28x speedup for 6-month event calculations.

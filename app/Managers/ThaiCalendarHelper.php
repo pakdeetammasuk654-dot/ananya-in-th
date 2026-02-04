@@ -4,6 +4,10 @@ namespace App\Managers;
 
 class ThaiCalendarHelper
 {
+    private static $lunarCache = [];
+    private static $lastDate = null;
+    private static $lastLunar = null;
+
     /**
      * Determine if a given date is a Thai Buddhist Holy Day (Wan Pra).
      */
@@ -28,18 +32,33 @@ class ThaiCalendarHelper
 
     public static function getThaiLunarDate($dateStr)
     {
+        if (isset(self::$lunarCache[$dateStr])) {
+            return self::$lunarCache[$dateStr];
+        }
+
         $date = new \DateTime($dateStr);
-        // Using a reliable epoch: 1 Jan 2023 was Waxing 10, Month 2, BE 2566
-        $refDate = new \DateTime('2023-01-01');
+
+        // Optimization: start from last calculated date if possible to avoid O(N^2) loops in sequences
+        if (self::$lastDate !== null && $date >= self::$lastDate) {
+            $refDate = clone self::$lastDate;
+            $currDay = self::$lastLunar['day'];
+            $currPhase = self::$lastLunar['phase'];
+            $currMonth = self::$lastLunar['month'];
+            $currYearBE = self::$lastLunar['year_be'];
+            $isSecondMonth8 = self::$lastLunar['is_second_8'];
+        } else {
+            // Using a reliable epoch: 1 Jan 2023 was Waxing 10, Month 2, BE 2566
+            $refDate = new \DateTime('2023-01-01');
+            $currDay = 10;
+            $currPhase = 'waxing';
+            $currMonth = 2;
+            $currYearBE = 2566;
+            $isSecondMonth8 = false;
+        }
+
         $daysDiff = (int) $date->diff($refDate)->format('%a');
         if ($date < $refDate)
             $daysDiff = -$daysDiff;
-
-        $currDay = 10;
-        $currPhase = 'waxing';
-        $currMonth = 2;
-        $currYearBE = 2566;
-        $isSecondMonth8 = false;
 
         if ($daysDiff >= 0) {
             for ($i = 0; $i < $daysDiff; $i++) {
@@ -77,13 +96,20 @@ class ThaiCalendarHelper
             }
         }
 
-        return [
+        $result = [
             'day' => $currDay,
             'phase' => $currPhase,
             'month' => $currMonth,
             'year_be' => $currYearBE,
             'is_second_8' => $isSecondMonth8
         ];
+
+        // Cache result and update last state for next call
+        self::$lunarCache[$dateStr] = $result;
+        self::$lastDate = clone $date;
+        self::$lastLunar = $result;
+
+        return $result;
     }
 
     private static function isFullMonth($month, $yearBE, $isSecondMonth8 = false)
