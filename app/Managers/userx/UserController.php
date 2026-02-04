@@ -66,20 +66,36 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
         $strColor = array();
-        $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
+        $numbDays = $request->getAttribute('days');
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
+        if (!empty($numbDays)) {
+            // Split days string into array of individual IDs
+            $ids = str_split($numbDays);
+            $uniqueIds = array_unique($ids);
+
+            if (!empty($uniqueIds)) {
+                // Optimization: Batch fetch all colors in a single query to avoid N+1 bottleneck
+                $placeholders = implode(',', array_fill(0, count($uniqueIds), '?'));
+                $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+                $stmt = $this->db->prepare($sql);
+
+                if ($stmt) {
+                    $stmt->execute(array_values($uniqueIds));
+                    $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                    // Map results by colorid for efficient lookup
+                    $colorMap = [];
+                    foreach ($rows as $row) {
+                        $colorMap[$row['colorid']] = $row;
+                    }
+
+                    // Reconstruct the ordered list, including duplicates as per original behavior
+                    foreach ($ids as $id) {
+                        if (isset($colorMap[$id])) {
+                            $strColor[] = $colorMap[$id];
+                        }
+                    }
                 }
             }
         }
