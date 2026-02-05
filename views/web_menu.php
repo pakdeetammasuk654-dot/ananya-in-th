@@ -171,7 +171,7 @@ if ($is_wanpra_today) {
         <i class="fa-solid fa-clover"></i> ananya.in.th
     </a>
 
-    <button class="navbar-toggle" id="menuToggle">
+    <button class="navbar-toggle" id="menuToggle" aria-label="เมนู">
         <i class="fa-solid fa-bars"></i>
     </button>
 
