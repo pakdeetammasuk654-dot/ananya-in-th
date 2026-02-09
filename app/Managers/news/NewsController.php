@@ -2,8 +2,17 @@
 
 namespace App\Managers;
 
+use Psr\Container\ContainerInterface;
+
 class NewsController extends Manager
 {
+    private $startTime;
+
+    public function __construct(ContainerInterface $container)
+    {
+        parent::__construct($container);
+        $this->startTime = microtime(true);
+    }
 
     public function wanpraTomoro($request, $response)
     {
@@ -75,37 +84,49 @@ class NewsController extends Manager
 
     public function postLuckyNumberV2($request, $response)
     {
-        $body = $request->getParsedBody();
-        $date = filter_var($body['date'], FILTER_SANITIZE_STRING);
-        $num1 = filter_var($body['num1'], FILTER_SANITIZE_STRING);
-        $num2 = filter_var($body['num2'], FILTER_SANITIZE_STRING);
-        $num3 = filter_var($body['num3'], FILTER_SANITIZE_STRING);
-        $num4 = filter_var($body['num4'], FILTER_SANITIZE_STRING);
-        $num5 = filter_var($body['num5'], FILTER_SANITIZE_STRING);
-        $num6 = filter_var($body['num6'], FILTER_SANITIZE_STRING);
+        if (ob_get_level() > 0)
+            ob_clean();
+        try {
+            $body = $request->getParsedBody();
+            if (empty($body)) {
+                $raw = file_get_contents('php://input');
+                $body = json_decode($raw, true);
+            }
 
-        // UPSERT logic: UPDATE if exists, else INSERT
-        $sql = "INSERT INTO luckynumber_v2 (lucky_date, num1, num2, num3, num4, num5, num6) 
-                VALUES (:date, :n1, :n2, :n3, :n4, :n5, :n6)
-                ON DUPLICATE KEY UPDATE num1=:n1, num2=:n2, num3=:n3, num4=:n4, num5=:n5, num6=:n6";
+            $date = $body['date'] ?? '';
+            $num1 = $body['num1'] ?? '';
+            $num2 = $body['num2'] ?? '';
+            $num3 = $body['num3'] ?? '';
+            $num4 = $body['num4'] ?? '';
+            $num5 = $body['num5'] ?? '';
+            $num6 = $body['num6'] ?? '';
 
-        $stmt = $this->db->prepare($sql);
-        $params = [
-            ':date' => $date,
-            ':n1' => $num1,
-            ':n2' => $num2,
-            ':n3' => $num3,
-            ':n4' => $num4,
-            ':n5' => $num5,
-            ':n6' => $num6
-        ];
+            // UPSERT logic: UPDATE if exists, else INSERT
+            $sql = "INSERT INTO luckynumber_v2 (lucky_date, num1, num2, num3, num4, num5, num6) 
+                    VALUES (:date, :n1, :n2, :n3, :n4, :n5, :n6)
+                    ON DUPLICATE KEY UPDATE num1=:n1, num2=:n2, num3=:n3, num4=:n4, num5=:n5, num6=:n6";
 
-        if ($stmt->execute($params)) {
-            $response->getBody()->write(json_encode(['activity' => 'insert_lucky_v2', 'message' => 'success']));
-        } else {
-            $response->getBody()->write(json_encode(['activity' => 'insert_lucky_v2', 'message' => 'fail']));
+            $stmt = $this->db->prepare($sql);
+            $success = $stmt->execute([
+                ':date' => $date,
+                ':n1' => $num1,
+                ':n2' => $num2,
+                ':n3' => $num3,
+                ':n4' => $num4,
+                ':n5' => $num5,
+                ':n6' => $num6
+            ]);
+
+            if ($success) {
+                $response->getBody()->write(json_encode(['activity' => 'insert_lucky_v2', 'message' => 'success']));
+            } else {
+                $response->getBody()->write(json_encode(['activity' => 'insert_lucky_v2', 'message' => 'fail']));
+            }
+            return $response->withHeader('Content-Type', 'application/json');
+        } catch (\Exception $e) {
+            $response->getBody()->write(json_encode(['activity' => 'insert_lucky_v2', 'message' => 'fail', 'error' => $e->getMessage()]));
+            return $response->withHeader('Content-Type', 'application/json');
         }
-        return $response->withHeader('Content-Type', 'application/json');
     }
 
     public function getLuckyNumberV2($request, $response)
@@ -131,8 +152,8 @@ class NewsController extends Manager
     {
         $newsIdType = $req->getAttribute('newsidtype');
 
-        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
-        $host = $protocol . "://" . $_SERVER['HTTP_HOST'];
+        // Hardcoded host to ensure correct image URLs behind proxies/IP access
+        $host = "https://numberniceic.online";
 
         // Force UTF-8 for Thai characters
         $this->db->exec("SET NAMES utf8");
@@ -180,31 +201,39 @@ class NewsController extends Manager
             $fetchedName = $catStmt->fetchColumn();
             $categoryName = $fetchedName ? $fetchedName : $defaultName;
 
+            // Reverting to SELECT * as requested by user
+            // $cols = "newsid, news_headline, news_pic_header, news_title_short, news_desc, news_date, category, fix, hashtag1, hashtag2, hashtag3, hashtag4, hashtag5, hashtag6, LEFT(news_detail, 300) as news_detail";
+
+            // Corrected Config - Only existing tables
+            // news_title_short does NOT exist -> use news_headline AS dummy or handle in map
+            // category does NOT exist -> handled by PHP logic
+            $cols = "newsid, news_headline, news_pic_header, news_headline as news_title_short, news_desc, news_date, fix, hashtag1, hashtag2, hashtag3, hashtag4, hashtag5, hashtag6, news_detail";
+
             $sql = "";
             switch ($newsIdType) {
                 case "0":
-                    $sql = "SELECT * FROM news WHERE fix IN ('1', '2', '3', '4', '5') ORDER BY fix ASC LIMIT 100";
+                    $sql = "SELECT $cols FROM news WHERE fix IN ('1', '2', '3', '4', '5') ORDER BY fix ASC LIMIT 100";
                     break;
                 case "1":
-                    $sql = "SELECT * FROM news WHERE hashtag1 = 1 ORDER BY newsid DESC LIMIT 100";
+                    $sql = "SELECT $cols FROM news WHERE hashtag1 = 1 ORDER BY newsid DESC LIMIT 100";
                     break;
                 case "2":
-                    $sql = "SELECT * FROM news WHERE hashtag2 = 1 ORDER BY newsid DESC LIMIT 100";
+                    $sql = "SELECT $cols FROM news WHERE hashtag2 = 1 ORDER BY newsid DESC LIMIT 100";
                     break;
                 case "3":
-                    $sql = "SELECT * FROM news WHERE hashtag3 = 1 ORDER BY newsid DESC LIMIT 100";
+                    $sql = "SELECT $cols FROM news WHERE hashtag3 = 1 ORDER BY newsid DESC LIMIT 100";
                     break;
                 case "4":
-                    $sql = "SELECT * FROM news WHERE hashtag4 = 1 ORDER BY newsid DESC LIMIT 100";
+                    $sql = "SELECT $cols FROM news WHERE hashtag4 = 1 ORDER BY newsid DESC LIMIT 100";
                     break;
                 case "5":
-                    $sql = "SELECT * FROM news WHERE hashtag5 = 1 ORDER BY newsid DESC LIMIT 100";
+                    $sql = "SELECT $cols FROM news WHERE hashtag5 = 1 ORDER BY newsid DESC LIMIT 100";
                     break;
                 case "6":
-                    $sql = "SELECT * FROM news WHERE hashtag6 = 1 ORDER BY newsid DESC LIMIT 100";
+                    $sql = "SELECT $cols FROM news WHERE hashtag6 = 1 ORDER BY newsid DESC LIMIT 100";
                     break;
                 default:
-                    $sql = "SELECT * FROM news WHERE 1=0";
+                    $sql = "SELECT $cols FROM news WHERE 1=0";
                     break;
             }
 
@@ -232,17 +261,31 @@ class NewsController extends Manager
                 $dataWithCat[] = $mapArticle($r);
             }
 
-            $json = json_encode(array("type_id" => "$newsIdType", "news_all_type" => $dataWithCat));
+            $json = json_encode(
+                array("type_id" => "$newsIdType", "news_all_type" => $dataWithCat),
+                JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE
+            );
+
+            if ($json === false) {
+                $errorMsg = json_last_error_msg();
+                $res->getBody()->write(json_encode(['error' => "JSON Encoding Error: $errorMsg"]));
+                return $res->withHeader('Content-Type', 'application/json')->withStatus(500);
+            }
+
             $res->getBody()->write($json);
-            return $res->withHeader('Content-Type', 'application/json');
+
+            // Add Debug Header
+            $duration = microtime(true) - $this->startTime;
+            return $res->withHeader('Content-Type', 'application/json')
+                ->withHeader('X-Execution-Time', number_format($duration, 4));
         }
         return $res;
     }
 
     public function newsTop24($request, $response)
     {
-        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
-        $host = $protocol . "://" . $_SERVER['HTTP_HOST'];
+        // Hardcoded host to ensure correct image URLs behind proxies/IP access
+        $host = "https://ananya.in.th";
 
         // Force UTF-8 for Thai characters
         $this->db->exec("SET NAMES utf8");
@@ -271,9 +314,8 @@ class NewsController extends Manager
             return $uniqueData;
         };
 
-        // Select only necessary columns to Improve Performance (Avoid fetching full HTML body)
-        // Adjust column names if they differ in your specific DB version, but these are standard based on code.
-        $cols = "newsid, news_headline, news_pic_header, news_title_short, news_desc, news_date, category, fix, hashtag1, hashtag2, hashtag3, hashtag4, hashtag5, hashtag6, LEFT(news_detail, 300) as news_detail";
+        // Corrected Config - Only existing tables
+        $cols = "newsid, news_headline, news_pic_header, news_headline as news_title_short, news_desc, news_date, fix, hashtag1, hashtag2, hashtag3, hashtag4, hashtag5, hashtag6, news_detail";
 
         // 1. Hot News (Latest 7) - Check 'fix' flag
         $dataHot = $processCategory(
@@ -324,15 +366,18 @@ class NewsController extends Manager
             $categories[6] ?? 'หลักการเลือกทะเบียนรถ'
         );
 
-        $data = json_encode(array(
-            "news_hot" => $dataHot,
-            "news_feedback" => $dataFeedback,
-            "news_phonenum" => $dataPhoneNum,
-            "news_namesur" => $dataNameSur,
-            "news_tabian" => $dataTabian,
-            "news_homenum" => $dataHomeNum,
-            "news_concept" => $dataConcept
-        ));
+        $data = json_encode(
+            array(
+                "news_hot" => $dataHot,
+                "news_feedback" => $dataFeedback,
+                "news_phonenum" => $dataPhoneNum,
+                "news_namesur" => $dataNameSur,
+                "news_tabian" => $dataTabian,
+                "news_homenum" => $dataHomeNum,
+                "news_concept" => $dataConcept
+            ),
+            JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE
+        );
 
         $response->getBody()->write($data);
         return $response->withHeader('Content-Type', 'application/json');
@@ -351,6 +396,9 @@ class NewsController extends Manager
             $date = $article['news_date'] ?? $article['created_at'] ?? $article['date'] ?? $article['published_at'] ?? '';
             $cat = $article['category_name'] ?? $article['category'] ?? 'ทั่วไป';
 
+            $fix = $article['fix'] ?? '0';
+            $detail = $article['news_detail'] ?? $article['detail'] ?? $article['content'] ?? '';
+
             if (!empty($img) && strpos($img, 'http') !== 0) {
                 $img = $host . '/' . ltrim($img, '/');
             }
@@ -359,9 +407,11 @@ class NewsController extends Manager
                 'news_headline' => $headline,
                 'news_title_short' => $short,
                 'news_desc' => $desc,
+                'news_detail' => $detail,
                 'news_pic_header' => $img,
                 'news_date' => $date,
-                'category' => $cat
+                'category' => $cat,
+                'fix' => $fix
             ];
         };
     }
@@ -383,8 +433,8 @@ class NewsController extends Manager
         }
 
         // Fix Image Path for View
-        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
-        $host = $protocol . "://" . $_SERVER['HTTP_HOST'];
+        // Fix Image Path for View - Hardcoded Host
+        $host = "https://ananya.in.th";
         if (!empty($data['news_pic_header']) && strpos($data['news_pic_header'], 'http') !== 0) {
             $path = ltrim($data['news_pic_header'], '/');
             $data['news_pic_header'] = $host . '/' . $path;
@@ -422,8 +472,8 @@ class NewsController extends Manager
         }
 
         // Convert relative image URL to absolute
-        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
-        $host = $protocol . "://" . $_SERVER['HTTP_HOST'];
+        // Convert relative image URL to absolute - Hardcoded Host
+        $host = "https://ananya.in.th";
         if (!empty($article['news_pic_header']) && strpos($article['news_pic_header'], 'http') !== 0) {
             $path = ltrim($article['news_pic_header'], '/');
             $article['news_pic_header'] = $host . '/' . $path;

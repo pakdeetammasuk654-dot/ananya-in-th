@@ -518,38 +518,50 @@
             </div>
         </section>
 
-        <!-- Articles Section -->
-        <section class="section" style="background:var(--bg-darker);">
-            <div class="section-header">
-                <h2 class="section-title">บทความน่ารู้</h2>
-                <p class="section-subtitle">สาระความรู้เกี่ยวกับตัวเลขและดวงชะตา</p>
-            </div>
 
-            <div class="articles-grid">
-                <?php foreach (($pinnedArticles ?: []) as $article): ?>
-                    <a href="/articles/<?php echo $article->slug; ?>" class="article-card">
-                        <div style="height:200px; overflow:hidden;">
-                            <img src="<?php echo $article->image_url; ?>"
-                                alt="<?php echo htmlspecialchars($article->title); ?>" class="article-image">
-                        </div>
-                        <div class="article-content">
-                            <div class="article-category"><?php echo $article->category ?: 'General'; ?></div>
-                            <h3 class="article-title"><?php echo $article->title; ?></h3>
-                            <p class="article-excerpt">
-                                <?php echo mb_substr(strip_tags($article->excerpt ?: $article->content), 0, 100) . '...'; ?>
-                            </p>
-                        </div>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-
-            <div style="text-align:center; margin-top:3rem;">
-                <a href="/articles" class="btn btn-glass">ดูบทความทั้งหมด <i class="fa-solid fa-arrow-right"></i></a>
-            </div>
-        </section>
 
         <footer class="footer">
-            <p>&copy; <?php echo date('Y'); ?> Number เลขศาสตร์ พลังเงา (Ananya). All rights reserved.</p>
+            <!-- New Footer Section: Color Logic Explanation -->
+            <div
+                style="max-width: 1200px; margin: 0 auto; text-align: left; padding: 2rem 0; border-bottom: 1px solid var(--glass-border);">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+
+                    <!-- About Colors -->
+                    <div>
+                        <h4 style="color: var(--text-light); font-size: 1.2rem; margin-bottom: 1rem;">
+                            <i class="fa-solid fa-palette" style="color: var(--secondary); margin-right: 8px;"></i>
+                            หลักการแสดงผลสีมงคล 8 ช่อง
+                        </h4>
+                        <p style="color: var(--text-gray); font-size: 0.95rem; line-height: 1.6;">
+                            ระบบของเราไม่ได้แสดงแค่สีเดียวต่อวัน แต่ใช้หลักการ <strong>"แตกเฉดสี" (Color
+                                Expansion)</strong> เพื่อกระจายให้ครบ 8 ช่องอัตโนมัติ
+                            ช่วยให้ท่านมีทางเลือกในการแต่งกายที่หลากหลายและครบถ้วนตามหลักทักษา
+                        </p>
+                        <ul
+                            style="color: var(--text-gray); font-size: 0.9rem; margin-top: 1rem; padding-left: 1.5rem; line-height: 1.6;">
+                            <li><strong>แถวบน (สีมงคล):</strong> แสดงเฉดสีเสริมดวง หากวันมงคลมีน้อย
+                                ระบบจะดึงเฉดสีสำรองมาแสดงเพิ่มให้ครบ 8 ช่องเพื่อความสมบูรณ์</li>
+                            <li><strong>แถวล่าง (สีกาลกิณี):</strong> เน้นย้ำสีที่ควรเลี่ยง
+                                โดยดึงเฉดสีของวันกาลกิณีหลักมาแสดงซ้ำหลายเฉดให้ท่านสังเกตได้ง่ายชัดเจน</li>
+                        </ul>
+                    </div>
+
+                    <!-- App Links (Existing context or new) -->
+                    <div>
+                        <h4 style="color: var(--text-light); font-size: 1.2rem; margin-bottom: 1rem;">
+                            ดาวน์โหลดแอปพลิเคชัน</h4>
+                        <a href="https://play.google.com/store/apps/details?id=com.numberniceic" target="_blank"
+                            style="text-decoration: none; color: var(--text-gray); display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 8px; transition: 0.3s;">
+                            <i class="fa-brands fa-google-play" style="font-size: 1.2rem;"></i>
+                            <span>Google Play Store</span>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+
+            <p style="margin-top: 2rem;">&copy; <?php echo date('Y'); ?> Number เลขศาสตร์ พลังเงา (Ananya). All rights
+                reserved.</p>
         </footer>
     </main>
 

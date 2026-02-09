@@ -1,36 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Users - Admin</title>
+    <title>User Management - Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f0f2f5;
+            font-family: 'Kanit', sans-serif;
+            background-color: #f3f4f6;
             margin: 0;
+            padding: 0;
         }
 
-        .main-wrapper {
-            max-width: 1000px;
-            margin: 2rem auto;
-            padding: 0 1rem;
+        .container {
+            max-width: 80rem;
+            margin: 0 auto;
+            padding: 2rem 1rem;
         }
 
         .card {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
-        h2 {
-            margin-top: 0;
-            color: #333;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-success {
+            background-color: #10b981;
+            color: white;
         }
 
         table {
@@ -39,118 +49,43 @@
             margin-top: 1rem;
         }
 
-        th,
-        td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-
         th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            color: #555;
+            background-color: #f9fafb;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 2px solid #e5e7eb;
         }
 
-        tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        .btn {
-            padding: 6px 12px;
-            text-decoration: none;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .btn-edit {
-            background-color: #ffc107;
-            color: #212529;
-        }
-
-        .btn-back {
-            background-color: #6c757d;
-            color: white;
-            margin-bottom: 1rem;
-            display: inline-block;
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            color: white;
-            font-size: 0.8rem;
-        }
-
-        .bg-success {
-            background-color: #28a745;
-        }
-
-        .bg-danger {
-            background-color: #dc3545;
-        }
-
-        .bg-warning {
-            background-color: #ffc107;
-            color: black;
-        }
-
-        .bg-secondary {
-            background-color: #6c757d;
+            background-color: #d1fae5;
+            color: #065f46;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
         }
     </style>
 </head>
 
 <body>
     <?php include 'web_menu.php'; ?>
-    <div class="main-wrapper">
-        <a href="/web/dashboard" class="btn btn-back">← กลับหน้าหลัก</a>
+    <div class="container">
         <div class="card">
-            <h2>จัดการผู้ใช้ระบบ</h2>
-            <?php include 'web_admin_toolbar.php'; ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>ชื่อผู้ใช้</th>
-                        <th>ชื่อ-นามสกุล</th>
-                        <th>สถานะ</th>
-                        <th>VIP</th>
-                        <th>วันเกิด</th>
-                        <th>จัดการ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($users as $u): ?>
-                        <tr>
-                            <td><?php echo $u->memberid; ?></td>
-                            <td><?php echo htmlspecialchars($u->username); ?></td>
-                            <td><?php echo htmlspecialchars($u->realname . ' ' . $u->surname); ?></td>
-                            <td>
-                                <span
-                                    class="badge <?php echo ($u->status == 'active' || $u->status == 'activie') ? 'bg-success' : 'bg-danger'; ?>">
-                                    <?php echo ($u->status == 'active' || $u->status == 'activie') ? 'ใช้งาน' : $u->status; ?>
-                                </span>
-                            </td>
-                            <td>
-                                <?php
-                                $vipClass = 'bg-secondary';
-                                if ($u->vipcode == 'admin')
-                                    $vipClass = 'bg-danger';
-                                elseif ($u->vipcode != 'normal')
-                                    $vipClass = 'bg-warning';
-                                ?>
-                                <span
-                                    class="badge <?php echo $vipClass; ?>"><?php echo htmlspecialchars($u->vipcode); ?></span>
-                            </td>
-                            <td><?php echo htmlspecialchars($u->birthday); ?></td>
-                            <td>
-                                <a href="/web/admin/users/<?php echo $u->memberid; ?>" class="btn btn-edit">แก้ไข</a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+            <h1>จัดการสมาชิก (User Management)</h1>
+            <p>กรุณาใช้งานหน้า <a href="/web/admin/bag-colors">จัดการสีกระเป๋า</a> โดยตรงสำหรับจัดการข้อมูลสีกระเป๋า</p>
+
+            <div class="alert alert-info"
+                style="background:#e0f2fe; padding:1rem; border-radius:8px; border:1px solid #bae6fd; color:#0369a1;">
+                หน้าจอนี้ยังอยู่ระหว่างการพัฒนา หากท่านต้องการค้นหาสมาชิกและจัดการสีกระเป๋า ให้ใช้เมนู
+                <strong>"จัดการสีกระเป๋า"</strong> จากหน้าแดชบอร์ด
+            </div>
+
+            <a href="/web/dashboard" class="btn"
+                style="background:#6b7280; color:white; margin-top:1rem;">กลับหน้าแดชบอร์ด</a>
         </div>
     </div>
 </body>

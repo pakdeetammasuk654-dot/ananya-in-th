@@ -117,6 +117,7 @@
             <thead>
                 <tr>
                     <th>ลำดับ</th>
+                    <th>Order</th>
                     <th>เลขทะเบียน</th>
                     <th>จังหวัด</th>
                     <th>หมวดหมู่</th>
@@ -130,6 +131,11 @@
                     <tr>
                         <td>
                             <?php echo $index + 1; ?>
+                        </td>
+                        <td>
+                            <span style="background:#eee; padding:2px 6px; border-radius:4px; font-size:0.8rem;">
+                                <?php echo $item->order_no ?? 0; ?>
+                            </span>
                         </td>
                         <td><strong>
                                 <?php echo htmlspecialchars($item->tabian_number); ?>

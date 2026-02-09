@@ -40,7 +40,10 @@ try {
     }
     echo "Table 'user_buddha_assign' ready.\n";
 
-    // 3. Update/Seed Buddha Pangs
+    // 2.1 Cleanup Old Duplicates/Invalid Records
+    // Delete records that have NULL or 0 buddha_day if a record with the same name exists
+    $db->exec("DELETE FROM buddha_pang_tb WHERE (buddha_day IS NULL OR buddha_day = 0) AND id > 0");
+    echo "Cleaned up old/invalid records.\n";
     // We update existing ones or insert if missing
     // Day: 1-Sun, 2-Mon, 3-Tue, 4-WedD, 5-Thu, 6-Fri, 7-Sat, 8-WedN
     // Extra: 90-MaraVichai, 91-Prathanporn, 92-Leela, 93-OpenWorld, 94-Chinnaraj, 95-Sothorn
@@ -54,12 +57,12 @@ try {
         ['พระประจำวันศุกร์ (ปางรำพึง)', 6, 'เน้นความรัก ความเมตตา และเสน่ห์มหานิยม', '/uploads/buddha/fri.png'],
         ['พระประจำวันเสาร์ (ปางนาคปรก)', 7, 'เน้นความคุ้มครอง ป้องกันภัย และความหนักแน่นมั่นคง', '/uploads/buddha/sat.png'],
         // General / Special Pangs for Lifetime
-        ['พระปางมารวิชัย (ชนะมาร)', 90, 'พระพุทธรูปชนะมาร เหมาะสำหรับผู้ที่ต้องการชนะอุปสรรคศัตรูหมู่มารทั้งปวง', '/uploads/buddha/tue.png'],
-        ['พระปางประทานพร', 91, 'พระพุทธรูปแห่งการให้พร เหมาะสำหรับผู้ที่ต้องการความสำเร็จสมปรารถนา', '/uploads/buddha/tue.png'],
-        ['พระปางลีลา', 92, 'พระพุทธรูปแห่งความก้าวหน้า เหมาะสำหรับผู้ที่ต้องการความเจริญรุ่งเรือง', '/uploads/buddha/fri.png'],
-        ['พระปางเปิดโลก', 93, 'พระพุทธรูปแห่งการเปิดทางสว่าง เหมาะสำหรับผู้ที่ต้องการทางออกและโอกาสใหม่ๆ', '/uploads/buddha/sun.png'],
-        ['พระพุทธชินราช', 94, 'พระพุทธรูปศักดิ์สิทธิ์คู่บ้านคู่เมือง เสริมบารมีและอำนาจวาสนา', '/uploads/buddha/thu.png'],
-        ['หลวงพ่อโสธร', 95, 'พระพุทธรูปศักดิ์สิทธิ์ที่ประทานความสำเร็จ โชคลาภ และสุขภาพแข็งแรง', '/uploads/buddha/thu.png']
+        ['พระปางมารวิชัย (ชนะมาร)', 90, 'พระพุทธรูปชนะมาร เหมาะสำหรับผู้ที่ต้องการชนะอุปสรรคศัตรูหมู่มารทั้งปวง', '/uploads/buddha/mara_vichai.png'],
+        ['พระปางประทานพร', 91, 'พระพุทธรูปแห่งการให้พร เหมาะสำหรับผู้ที่ต้องการความสำเร็จสมปรารถนา', '/uploads/buddha/prathanporn.png'],
+        ['พระปางลีลา', 92, 'พระพุทธรูปแห่งความก้าวหน้า เหมาะสำหรับผู้ที่ต้องการความเจริญรุ่งเรือง', '/uploads/buddha/leela.png'],
+        ['พระปางเปิดโลก', 93, 'พระพุทธรูปแห่งการเปิดทางสว่าง เหมาะสำหรับผู้ที่ต้องการทางออกและโอกาสใหม่ๆ', '/uploads/buddha/perd_lok.png'],
+        ['พระพุทธชินราช', 94, 'พระพุทธรูปศักดิ์สิทธิ์คู่บ้านคู่เมือง เสริมบารมีและอำนาจวาสนา', '/uploads/buddha/chinnarat.png'],
+        ['หลวงพ่อโสธร', 95, 'พระพุทธรูปศักดิ์สิทธิ์ที่ประทานความสำเร็จ โชคลาภ และสุขภาพแข็งแรง', '/uploads/buddha/sothon.png']
     ];
 
     foreach ($pangs as $p) {
@@ -67,16 +70,9 @@ try {
         $stmt = $db->prepare("SELECT id, image_url FROM buddha_pang_tb WHERE buddha_day = ?");
         $stmt->execute([$p[1]]);
         if ($row = $stmt->fetch()) {
-            // Update only name and description. 
-            // Update image_url ONLY if it's currently empty/null AND we have a default provided
-            if (empty($row['image_url']) && !empty($p[3])) {
-                $update = $db->prepare("UPDATE buddha_pang_tb SET pang_name = ?, description = ?, image_url = ? WHERE id = ?");
-                $update->execute([$p[0], $p[2], $p[3], $row['id']]);
-            } else {
-                // Preserve existing image
-                $update = $db->prepare("UPDATE buddha_pang_tb SET pang_name = ?, description = ? WHERE id = ?");
-                $update->execute([$p[0], $p[2], $row['id']]);
-            }
+            // Update everything including image_url
+            $update = $db->prepare("UPDATE buddha_pang_tb SET pang_name = ?, description = ?, image_url = ? WHERE id = ?");
+            $update->execute([$p[0], $p[2], $p[3], $row['id']]);
         } else {
             // Insert
             $insert = $db->prepare("INSERT INTO buddha_pang_tb (pang_name, buddha_day, description, image_url) VALUES (?, ?, ?, ?)");

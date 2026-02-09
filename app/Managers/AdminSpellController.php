@@ -127,7 +127,8 @@ class AdminSpellController extends Manager
             $targetPath = $uploadDir . '/' . $newName;
 
             if (move_uploaded_file($tmpName, $targetPath)) {
-                return '/uploads/spells/' . $newName;
+                @chmod($targetPath, 0644); // Ensure web server can read it
+                return '/public/uploads/spells/' . $newName;
             }
         }
 

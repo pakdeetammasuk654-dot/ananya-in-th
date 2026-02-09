@@ -39,24 +39,11 @@ run_remote() {
 EOF
 }
 
-echo "📦 Uploading Controller..."
-upload_file "app/Managers/BuddhaPangController.php" "$REMOTE_DIR/app/Managers/"
+echo "📦 Uploading Deployment Tarball..."
+upload_file "buddha_deploy.tar.gz" "$REMOTE_DIR/"
 
-echo "📦 Uploading Views..."
-upload_file "views/admin_buddha_list.php" "$REMOTE_DIR/views/"
-upload_file "views/admin_buddha_form.php" "$REMOTE_DIR/views/"
-upload_file "views/web_dashboard.php" "$REMOTE_DIR/views/"
-
-echo "📦 Uploading modified Routes..."
-upload_file "app/routes.php" "$REMOTE_DIR/app/"
-
-echo "📦 Uploading Migration script..."
-upload_file "migrate_buddha_full.php" "$REMOTE_DIR/"
-
-echo "📦 Uploading Buddha Images..."
-run_remote "mkdir -p $REMOTE_DIR/public/uploads/buddha"
-upload_file "public/uploads/buddha/mon.png" "$REMOTE_DIR/public/uploads/buddha/"
-upload_file "public/uploads/buddha/tue.png" "$REMOTE_DIR/public/uploads/buddha/"
+echo "📦 Extracting files on remote server..."
+run_remote "cd $REMOTE_DIR && tar -xzf buddha_deploy.tar.gz && chmod -R 755 public/uploads/buddha"
 
 echo "🏗️ Running database migration on remote server..."
 run_remote "cd $REMOTE_DIR && php migrate_buddha_full.php"

@@ -21,6 +21,8 @@ expect "$ "
 # Append lines if not exist (simple grep check)
 send "grep -q 'cron/wanpra' mycron || echo '0 7,18 * * * /usr/bin/php /home/tayap/ananya-php/public/index.php /cron/wanpra >> /home/tayap/ananya-php/cron.log 2>&1' >> mycron\r"
 expect "$ "
+send "grep -q 'cron/cleanup-assignments' mycron || echo '* * * * * /usr/bin/php /home/tayap/ananya-php/public/index.php /cron/cleanup-assignments >> /home/tayap/ananya-php/cleanup.log 2>&1' >> mycron\r"
+expect "$ "
 
 # Install new cron
 send "crontab mycron\r"

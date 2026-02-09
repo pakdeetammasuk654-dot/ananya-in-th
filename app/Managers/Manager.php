@@ -5,7 +5,7 @@ use Psr\Container\ContainerInterface;
 
 class Manager
 {
-    private $container;
+    protected $container;
 
     function __construct(ContainerInterface $container)
     {

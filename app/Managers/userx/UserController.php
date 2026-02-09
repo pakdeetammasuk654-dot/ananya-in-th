@@ -390,9 +390,22 @@ class UserController extends Manager
         $sminute = filter_var($body['sminute'] ?? '', FILTER_SANITIZE_STRING);
         $sprovince = filter_var($body['sprovince'] ?? '', FILTER_SANITIZE_STRING);
         $sgender = filter_var($body['sgender'] ?? '', FILTER_SANITIZE_STRING);
+        $avatar = filter_var($body['avatar'] ?? '10', FILTER_SANITIZE_STRING);
+        $realname = filter_var($body['realname'] ?? '', FILTER_SANITIZE_STRING);
+        $surname = filter_var($body['surname'] ?? '', FILTER_SANITIZE_STRING);
 
-        $cYear = $syear - 543;
-        $birthdayTs = strtotime("$cYear-$smonth-$sday");
+        $syear_int = (int) $syear;
+        $cYear = ($syear_int > 2400) ? $syear_int - 543 : $syear_int;
+
+        $m = (int) $smonth;
+        $d = (int) $sday;
+
+        $sBirthday = sprintf("%04d-%02d-%02d", $cYear, $m, $d);
+        $debugMsg = date("Y-m-d H:i:s") . " | memberUpdate: raw_m=$smonth, raw_d=$sday, raw_y=$syear -> formatted=$sBirthday\n";
+        file_put_contents(__DIR__ . '/../../public/debug_birthday.txt', $debugMsg, FILE_APPEND);
+        error_log("memberUpdate: raw_m=$smonth, raw_d=$sday, raw_y=$syear -> formatted=$sBirthday");
+        $birthdayTs = strtotime($sBirthday);
+
         $manager = new PersonManager();
         $ages = $manager->age($birthdayTs, time());
 
@@ -401,16 +414,25 @@ class UserController extends Manager
         $ageweek = $ages['week'] ?? 0;
         $ageday = $ages['day'] ?? 0;
 
-        $birthdays = new \DateTime("$cYear-$smonth-$sday");
-        $sBirthday = $birthdays->format('Y-m-d');
-
-        $sql = "UPDATE membertb SET birthday='{$sBirthday}', shour='{$shour}', sminute='{$sminute}', ageyear='{$ageyear}', agemonth='{$agemonth}', ageweek='{$ageweek}', ageday='{$ageday}', sprovince='{$sprovince}', sgender='{$sgender}' WHERE memberid = '{$memberid}'";
+        $sql = "UPDATE membertb SET realname='{$realname}', surname='{$surname}', birthday='{$sBirthday}', shour='{$shour}', sminute='{$sminute}', ageyear='{$ageyear}', agemonth='{$agemonth}', ageweek='{$ageweek}', ageday='{$ageday}', sprovince='{$sprovince}', sgender='{$sgender}', avatar='{$avatar}' WHERE memberid = '{$memberid}'";
 
         $result = $this->db->prepare($sql);
         if ($result->execute()) {
-            $data = array('activity' => 'update', 'message' => 'success');
+            // Fetch updated user data to return to the app
+            $sqlUser = "SELECT * FROM membertb WHERE memberid = '{$memberid}'";
+            $stmtUser = $this->db->prepare($sqlUser);
+            $stmtUser->execute();
+            $updatedUser = $stmtUser->fetch(\PDO::FETCH_OBJ);
+
+            $data = array(
+                'serverx' => array('activity' => 'update', 'message' => 'success'),
+                'userx' => $updatedUser
+            );
         } else {
-            $data = array('activity' => 'update', 'message' => 'fail');
+            $data = array(
+                'serverx' => array('activity' => 'update', 'message' => 'fail'),
+                'userx' => null
+            );
         }
 
         $response->getBody()->write(json_encode($data));
@@ -420,20 +442,23 @@ class UserController extends Manager
     public function userRegisterV2($request, $response)
     {
         $body = $request->getParsedBody();
-        $username = filter_var($body['username'], FILTER_SANITIZE_STRING);
+        $username = isset($body['username']) ? trim($body['username']) : '';
 
-        $sqlr = "SELECT username FROM membertb WHERE username LIKE '{$username}'";
-        $result = $this->db->prepare($sqlr);
+        if (empty($username)) {
+            $msg = array('activity' => 'register', 'message' => 'fail', 'error' => 'Username required');
+            $response->getBody()->write(json_encode($msg));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
 
-        if ($result->execute()) {
-            $data = $result->fetchAll(\PDO::FETCH_OBJ);
-            if (count($data) > 0) {
-                $msg = array('activity' => 'register', 'message' => 'dup');
-            } else {
-                $msg = array('activity' => 'register', 'message' => 'presuccess');
-            }
+        $sqlr = "SELECT count(*) as count FROM membertb WHERE username = :username";
+        $stmt = $this->db->prepare($sqlr);
+        $stmt->execute([':username' => $username]);
+        $row = $stmt->fetch();
+
+        if ($row && $row['count'] > 0) {
+            $msg = array('activity' => 'register', 'message' => 'dup');
         } else {
-            $msg = array('activity' => 'register', 'message' => 'error');
+            $msg = array('activity' => 'register', 'message' => 'presuccess');
         }
 
         $response->getBody()->write(json_encode($msg));
@@ -444,64 +469,68 @@ class UserController extends Manager
     {
         $body = $request->getParsedBody();
 
-        $realname = filter_var($body['realname'], FILTER_SANITIZE_STRING);
-        $surname = filter_var($body['surname'], FILTER_SANITIZE_STRING);
+        $realname = $body['realname'] ?? '';
+        $surname = $body['surname'] ?? '';
+        $username = $body['username'] ?? '';
+        $password = $body['password'] ?? '';
+        $sday = $body['sday'] ?? '';
+        $smonth = $body['smonth'] ?? '';
+        $syear = $body['syear'] ?? '';
+        $shour = $body['shour'] ?? '00';
+        $sminute = $body['sminute'] ?? '00';
+        $sprovince = $body['sprovince'] ?? '';
+        $sgender = $body['sgender'] ?? '';
+        $avatar = $body['avatar'] ?? '10';
 
-        $username = filter_var($body['username'], FILTER_SANITIZE_STRING);
-        $password = filter_var($body['password'], FILTER_SANITIZE_STRING);
+        $syear_int = (int) $syear;
+        $cYear = ($syear_int > 2400) ? $syear_int - 543 : $syear_int;
 
-        $sday = filter_var($body['sday'], FILTER_SANITIZE_STRING);
-        $smonth = filter_var($body['smonth'], FILTER_SANITIZE_STRING);
-        $syear = filter_var($body['syear'], FILTER_SANITIZE_STRING);
-        $shour = filter_var($body['shour'], FILTER_SANITIZE_STRING);
-        $sminute = filter_var($body['sminute'], FILTER_SANITIZE_STRING);
-        $sprovince = filter_var($body['sprovince'], FILTER_SANITIZE_STRING);
-        $sgender = filter_var($body['sgender'], FILTER_SANITIZE_STRING);
+        $m = (int) $smonth;
+        $d = (int) $sday;
 
-        $cYear = $syear - 543;
-        $birthday = strtotime("$cYear-$smonth-$sday");
-
-        $birthdays = new \DateTime("$cYear-$smonth-$sday");
-        $sBirthday = $birthdays->format('Y-m-d');
+        $sBirthday = sprintf("%04d-%02d-%02d", $cYear, $m, $d);
+        $debugMsg = date("Y-m-d H:i:s") . " | successInsertConfirm: raw_m=$smonth, raw_d=$sday, raw_y=$syear -> formatted=$sBirthday\n";
+        file_put_contents(__DIR__ . '/../../public/debug_birthday.txt', $debugMsg, FILE_APPEND);
+        error_log("successInsertConfirm: raw_m=$smonth, raw_d=$sday, raw_y=$syear -> formatted=$sBirthday");
+        $birthdayTS = strtotime($sBirthday);
 
         $manager = new PersonManager();
+        $ages = $manager->age($birthdayTS, time());
 
-        $ages = $manager->age($birthday, time());
-        if (array_key_exists('year', $ages)) {
-            $ageyear = $ages['year'];
-        } else {
-            $ageyear = 0;
-        }
-        ;
-        if (array_key_exists('month', $ages)) {
-            $agemonth = $ages['month'];
-        } else {
-            $agemonth = 0;
-        }
-        ;
-        if (array_key_exists('week', $ages)) {
-            $ageweek = $ages['week'];
-        } else {
-            $ageweek = 0;
-        }
-        ;
-        if (array_key_exists('day', $ages)) {
-            $ageday = $ages['day'];
-        } else {
-            $ageday = 0;
-        }
-        ;
+        $ageyear = $ages['year'] ?? 0;
+        $agemonth = $ages['month'] ?? 0;
+        $ageweek = $ages['week'] ?? 0;
+        $ageday = $ages['day'] ?? 0;
 
+        $sql = "INSERT INTO membertb (realname, surname, birthday, shour, sminute, ageyear, agemonth, ageweek, ageday, sprovince, sgender, avatar, username, password) 
+                VALUES (:realname, :surname, :birthday, :shour, :sminute, :ageyear, :agemonth, :ageweek, :ageday, :sprovince, :sgender, :avatar, :username, :password)";
 
-        $sql = "INSERT INTO membertb (realname, surname, birthday, shour, sminute, ageyear, agemonth, ageweek, ageday, sprovince, sgender, username, password) VALUES ('{$realname}', '{$surname}', '{$sBirthday}', '{$shour}', '{$sminute}', '{$ageyear}', '{$agemonth}', '{$ageweek}', '{$ageday}', '{$sprovince}', '{$sgender}', '{$username}', '{$password}')";
+        $stmt = $this->db->prepare($sql);
+        $res = $stmt->execute([
+            ':realname' => $realname,
+            ':surname' => $surname,
+            ':birthday' => $sBirthday,
+            ':shour' => $shour,
+            ':sminute' => $sminute,
+            ':ageyear' => $ageyear,
+            ':agemonth' => $agemonth,
+            ':ageweek' => $ageweek,
+            ':ageday' => $ageday,
+            ':sprovince' => $sprovince,
+            ':sgender' => $sgender,
+            ':avatar' => $avatar,
+            ':username' => $username,
+            ':password' => $password
+        ]);
 
-        $result = $this->db->prepare($sql);
-        if ($result->execute()) {
-            echo json_encode(array('activity' => 'register', 'message' => 'success'));
-
+        if ($res) {
+            $msg = array('activity' => 'register', 'message' => 'success');
         } else {
-            echo json_encode(array('activity' => 'register', 'message' => 'fail'));
+            $msg = array('activity' => 'register', 'message' => 'fail', 'debug' => $stmt->errorInfo());
         }
+
+        $response->getBody()->write(json_encode($msg));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
     public function userRegister($request, $response)
@@ -513,6 +542,7 @@ class UserController extends Manager
         $surname = filter_var($body['surname'], FILTER_SANITIZE_STRING);
         $username = filter_var($body['username'], FILTER_SANITIZE_STRING);
         $password = filter_var($body['password'], FILTER_SANITIZE_STRING);
+        $avatar = filter_var($body['avatar'] ?? '10', FILTER_SANITIZE_STRING);
 
 
         $sqlr = "SELECT username FROM membertb WHERE username LIKE '{$username}'";
@@ -527,7 +557,7 @@ class UserController extends Manager
                 echo json_encode(array('activity' => 'register', 'message' => 'dup'));
 
             } else {
-                $sql = "INSERT INTO membertb (realname, surname, username, password) VALUES ('{$realname}', '{$surname}', '{$username}', '{$password}')";
+                $sql = "INSERT INTO membertb (realname, surname, username, password, avatar) VALUES ('{$realname}', '{$surname}', '{$username}', '{$password}', '{$avatar}')";
                 $result = $this->db->prepare($sql);
 
                 if ($result->execute()) {

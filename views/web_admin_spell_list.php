@@ -128,9 +128,10 @@
                         <th width="50">ID</th>
                         <th width="80">Photo</th>
                         <th width="120">Type</th>
-                        <th>Title</th>
+                        <th width="200">Title</th>
                         <th>Content Preview</th>
-                        <th width="150" style="text-align:right;">Actions</th>
+                        <th width="120">Admin Note</th>
+                        <th width="130" style="text-align:right;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -154,7 +155,17 @@
                                 </td>
                                 <td><strong><?php echo htmlspecialchars($item->title); ?></strong></td>
                                 <td style="color: #666; font-size: 0.9rem;">
-                                    <?php echo htmlspecialchars(mb_strimwidth(strip_tags($item->content), 0, 100, '...')); ?>
+                                    <?php echo htmlspecialchars(mb_strimwidth(strip_tags($item->content), 0, 80, '...')); ?>
+                                </td>
+                                <td style="color: #f57c00; font-size: 0.85rem; font-style: italic;">
+                                    <span id="note-text-<?php echo $item->id; ?>">
+                                        <?php echo htmlspecialchars(mb_strimwidth($item->note ?? '', 0, 50, '...')); ?>
+                                    </span>
+                                    <button class="btn btn-primary"
+                                        style="padding: 2px 5px; font-size: 0.7rem; margin-left: 5px; background-color: #ff9800;"
+                                        onclick="editNote(<?php echo $item->id; ?>, '<?php echo addslashes($item->note ?? ''); ?>')">
+                                        Edit
+                                    </button>
                                 </td>
                                 <td style="text-align:right;">
                                     <a href="/web/admin/spells/edit/<?php echo $item->id; ?>" class="btn btn-primary"
@@ -175,6 +186,41 @@
             </table>
         </div>
     </div>
+
+    <script>
+        function editNote(id, currentNote) {
+            const newNote = prompt("แก้ไข คำเตือนพิเศษ:", currentNote);
+            if (newNote !== null) {
+                updateNote(id, newNote);
+            }
+        }
+
+        function updateNote(id, note) {
+            fetch('/admin/spell/update-note', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: id, note: note })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const noteSpan = document.getElementById(`note-text-${id}`);
+                        if (noteSpan) {
+                            noteSpan.innerText = note.length > 50 ? note.substring(0, 50) + '...' : note;
+                        }
+                        alert('บันทึกสำเร็จ');
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                });
+        }
+    </script>
 </body>
 
 </html>

@@ -48,6 +48,14 @@
             <a href="/admin/buddha/add" class="btn btn-gold btn-lg"><i class="fas fa-plus"></i> เพิ่มปางใหม่</a>
         </div>
 
+        <?php if (isset($status)): ?>
+            <div class="alert alert-<?= $status['type'] == 'success' ? 'success' : 'danger' ?> alert-dismissible fade show"
+                role="alert">
+                <?= htmlspecialchars($status['message']) ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+
         <div class="card overflow-hidden">
             <table class="table table-hover mb-0">
                 <thead class="bg-light text-center">

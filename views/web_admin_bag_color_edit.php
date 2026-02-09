@@ -519,7 +519,20 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'completed') {
-                        alert(`ส่งเรียบร้อย! (Sent: ${data.sent_count})`);
+                        if (data.sent_count > 0) {
+                            alert(`ส่งเรียบร้อย! (Sent: ${data.sent_count})`);
+                        } else {
+                            let msg = 'ไม่สามารถส่ง Notification ได้:';
+                            if (data.details && data.details[0]) {
+                                const d = data.details[0];
+                                if (d.status === 'no_bag_color_found') msg += '\n- ไม่พบข้อมูลสีกระเป๋าสำหรับอายุปัจจุบัน';
+                                else if (d.status === 'failed') msg += '\n- Token หมดอายุหรือผิดพลาด (FCM: UNREGISTERED)';
+                                else msg += '\n- ' + d.status;
+                            } else {
+                                msg += '\n- ไม่พบ Token ของสมาชิกรายนี้';
+                            }
+                            alert(msg);
+                        }
                     } else {
                         alert('เกิดข้อผิดพลาด: ' + (data.message || 'Unknown error'));
                     }

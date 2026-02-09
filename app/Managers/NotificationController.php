@@ -3,6 +3,7 @@
 namespace App\Managers;
 
 use App\Managers\PersonManager;
+use App\Managers\NotificationManager;
 use PDO;
 
 class NotificationController extends Manager
@@ -13,6 +14,9 @@ class NotificationController extends Manager
         $memberid = $post['memberid'] ?? '';
         $title = $post['title'] ?? '';
         $body = $post['body'] ?? '';
+        $type = $post['type'] ?? 'custom';
+        $url = $post['url'] ?? null;
+        $note = $post['note'] ?? null;
 
         if (empty($memberid) || empty($title) || empty($body)) {
             $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'Invalid input']));
@@ -30,9 +34,16 @@ class NotificationController extends Manager
 
             foreach ($users as $u) {
                 $fcmRes = '';
-                $res = $this->sendFcm($u->fcm_token, $title, $body, ['type' => 'custom', 'memberid' => (string) $u->memberid], $fcmRes);
+                $res = $this->sendFcm($u->fcm_token, $title, $body, [
+                    'type' => $type,
+                    'memberid' => (string) $u->memberid,
+                    'url' => $url,
+                    'note' => $note
+                ], $fcmRes);
                 if ($res) {
                     $successCount++;
+                    // Save to database
+                    $this->saveNotificationToDb((string) $u->memberid, $type, $title, $body, $url, $note);
                 } else {
                     $errors[] = ["memberid" => $u->memberid, "error" => $fcmRes];
                 }
@@ -55,9 +66,16 @@ class NotificationController extends Manager
 
         if ($user && !empty($user->fcm_token)) {
             $fcmRes = '';
-            $res = $this->sendFcm($user->fcm_token, $title, $body, ['type' => 'custom', 'memberid' => (string) $user->memberid], $fcmRes);
+            $res = $this->sendFcm($user->fcm_token, $title, $body, [
+                'type' => $type,
+                'memberid' => (string) $user->memberid,
+                'url' => $url,
+                'note' => $note
+            ], $fcmRes);
 
             if ($res) {
+                // Save to database
+                $this->saveNotificationToDb($memberid, $type, $title, $body, $url, $note);
                 $response->getBody()->write(json_encode(['status' => 'success', 'message' => 'Notification sent successfully']));
             } else {
                 $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'FCM failed', 'details' => $fcmRes]));
@@ -89,6 +107,37 @@ class NotificationController extends Manager
         $html = ob_get_clean();
         $response->getBody()->write($html);
         return $response;
+    }
+
+    public function cronCleanupExpiredAssignments($request, $response)
+    {
+        $results = $this->runCleanupLogic();
+
+        if ($results['total_expired'] == 0) {
+            $response->getBody()->write(json_encode(['status' => 'skipped', 'message' => 'No expired assignments found']));
+        } else {
+            $response->getBody()->write(json_encode([
+                'status' => 'success',
+                'cleaned' => $results,
+                'message' => 'Expired assignments cleaned and users notified'
+            ]));
+        }
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /**
+     * Core logic to clean up expired assignments and notify users.
+     * Can be called from Cron or lazily from API.
+     */
+    public function runCleanupLogic()
+    {
+        // Deactivated to stop looping notifications. 
+        // Expiration is now handled passively in BuddhaPangController::getAssigned.
+        return [
+            'total_expired' => 0,
+            'notifications_sent' => 0
+        ];
     }
 
     public function cronWanPra($request, $response)
@@ -151,8 +200,10 @@ class NotificationController extends Manager
                     $res = '';
                     // Use existing sendFcm (HTTP v1 loop)
                     $result = $this->sendFcm($u->fcm_token, $msgTitle, $msgBody, ['type' => 'wanpra', 'memberid' => (string) $u->memberid], $res);
-                    if ($result)
+                    if ($result) {
                         $successCount++;
+                        $this->saveNotificationToDb((string) $u->memberid, 'wanpra', $msgTitle, $msgBody);
+                    }
                 }
 
                 $response->getBody()->write(json_encode([
@@ -192,7 +243,7 @@ class NotificationController extends Manager
             */
 
             $queryParams = $request->getQueryParams();
-            $targetId = $queryParams['memberid'] ?? null;
+            $targetId = isset($queryParams['memberid']) ? trim($queryParams['memberid']) : null;
 
             // Get users with Token
             $sql = "SELECT memberid, realname, birthday, fcm_token FROM membertb WHERE fcm_token IS NOT NULL AND fcm_token != ''";
@@ -247,8 +298,10 @@ class NotificationController extends Manager
                     $debugInfo['fcm_response_raw'] = $fcmResponse;
 
                     $status = $res ? 'sent' : 'failed';
-                    if ($res)
+                    if ($res) {
                         $sentCount++;
+                        $this->saveNotificationToDb((string) $user->memberid, 'bag_color', $title, $body);
+                    }
 
                     $results[] = [
                         'memberid' => $user->memberid,
@@ -342,6 +395,21 @@ class NotificationController extends Manager
         } catch (\Exception $e) {
             error_log("FCM Exception: " . $e->getMessage());
             file_put_contents(__DIR__ . '/../../fcm_log.txt', date('[Y-m-d H:i:s] ') . "Exception: " . $e->getMessage() . "\n", FILE_APPEND);
+            return false;
+        }
+    }
+
+    /**
+     * Save notification to database
+     * Helper method called after FCM is sent successfully
+     */
+    private function saveNotificationToDb($memberId, $type, $title, $body, $url = null, $note = null)
+    {
+        try {
+            $notificationManager = new NotificationManager($this->container);
+            return $notificationManager->saveNotification($memberId, $type, $title, $body, $url, $note);
+        } catch (\Exception $e) {
+            error_log("NotificationController::saveNotificationToDb Error: " . $e->getMessage());
             return false;
         }
     }

@@ -10,11 +10,17 @@ class SacredTempleController extends Manager
 {
     public function viewList($request, $response)
     {
+        if (session_status() == PHP_SESSION_NONE)
+            session_start();
+        $status = $_SESSION['status'] ?? null;
+        unset($_SESSION['status']);
+
         $stmt = $this->db->query("SELECT * FROM sacred_temple_tb ORDER BY id DESC");
         $items = $stmt->fetchAll(PDO::FETCH_OBJ);
 
         return $this->container->get('view')->render($response, 'admin_temple_list.php', [
-            'items' => $items
+            'items' => $items,
+            'status' => $status
         ]);
     }
 
@@ -52,20 +58,36 @@ class SacredTempleController extends Manager
 
         // Handle file upload
         $files = $request->getUploadedFiles();
-        if (isset($files['image_file']) && $files['image_file']->getError() === UPLOAD_ERR_OK) {
+        if (isset($files['image_file'])) {
             $uploadedFile = $files['image_file'];
-            $extension = pathinfo($uploadedFile->getClientFilename(), PATHINFO_EXTENSION);
-            $filename = sprintf('temple_%s.%s', bin2hex(random_bytes(8)), $extension);
-            $directory = __DIR__ . '/../../public/uploads/temple';
+            if ($uploadedFile->getError() === UPLOAD_ERR_OK) {
+                $extension = strtolower(pathinfo($uploadedFile->getClientFilename(), PATHINFO_EXTENSION));
+                $filename = sprintf('temple_%s.%s', bin2hex(random_bytes(8)), $extension);
 
-            if (!is_dir($directory)) {
-                mkdir($directory, 0777, true);
+                // Use absolute path relative to project root
+                $baseDir = dirname(__DIR__, 2);
+                $directory = $baseDir . '/public/uploads/temple';
+
+                if (!is_dir($directory)) {
+                    @mkdir($directory, 0755, true);
+                }
+
+                if (is_writable($directory)) {
+                    $targetPath = $directory . DIRECTORY_SEPARATOR . $filename;
+                    $uploadedFile->moveTo($targetPath);
+                    @chmod($targetPath, 0644); // Ensure web server can read it
+                    $image_url = '/public/uploads/temple/' . $filename;
+                } else {
+                    error_log("Upload failed: Directory $directory is not writable.");
+                }
+            } elseif ($uploadedFile->getError() !== UPLOAD_ERR_NO_FILE) {
+                $errorMsg = "SACRED TEMPLE UPLOAD ERROR: Code " . $uploadedFile->getError();
+                error_log($errorMsg);
             }
-
-            $uploadedFile->moveTo($directory . DIRECTORY_SEPARATOR . $filename);
-            $image_url = '/uploads/temple/' . $filename;
         }
 
+        if (session_status() == PHP_SESSION_NONE)
+            session_start();
         if ($id) {
             $sql = "UPDATE sacred_temple_tb SET temple_name = :n, description = :desc, address = :addr, image_url = :img WHERE id = :id";
             $stmt = $this->db->prepare($sql);
@@ -76,6 +98,7 @@ class SacredTempleController extends Manager
                 'img' => $image_url,
                 'id' => $id
             ]);
+            $_SESSION['status'] = ['type' => 'success', 'message' => 'แก้ไขข้อมูลวัดเรียบร้อยแล้ว'];
         } else {
             $sql = "INSERT INTO sacred_temple_tb (temple_name, description, address, image_url) VALUES (:n, :desc, :addr, :img)";
             $stmt = $this->db->prepare($sql);
@@ -85,6 +108,7 @@ class SacredTempleController extends Manager
                 'addr' => $address,
                 'img' => $image_url
             ]);
+            $_SESSION['status'] = ['type' => 'success', 'message' => 'เพิ่มข้อมูลวัดใหม่เรียบร้อยแล้ว'];
         }
 
         return $response->withHeader('Location', '/admin/temple')->withStatus(302);
@@ -125,16 +149,31 @@ class SacredTempleController extends Manager
             return $response->withHeader('Content-Type', 'application/json');
         }
 
-        $sql = "INSERT INTO user_temple_assign (memberid, temple_id, custom_description, assigned_at) 
-                VALUES (:mid, :tid, :desc, NOW()) 
-                ON DUPLICATE KEY UPDATE temple_id = :tid, custom_description = :desc, assigned_at = NOW()";
+        // Check if already assigned
+        $checkSql = "SELECT id FROM user_temple_assign WHERE memberid = :mid AND temple_id = :tid";
+        $checkStmt = $this->db->prepare($checkSql);
+        $checkStmt->execute([':mid' => $memberid, ':tid' => $temple_id]);
+        $existing = $checkStmt->fetch(PDO::FETCH_OBJ);
 
-        $stmt = $this->db->prepare($sql);
-        $success = $stmt->execute([
-            ':mid' => $memberid,
-            ':tid' => $temple_id,
-            ':desc' => $custom_desc
-        ]);
+        if ($existing) {
+            // Update timestamp only
+            $sql = "UPDATE user_temple_assign SET assigned_at = NOW(), custom_description = :desc WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $success = $stmt->execute([
+                ':desc' => $custom_desc,
+                ':id' => $existing->id
+            ]);
+        } else {
+            // Insert new
+            $sql = "INSERT INTO user_temple_assign (memberid, temple_id, custom_description, assigned_at) 
+                    VALUES (:mid, :tid, :desc, NOW())";
+            $stmt = $this->db->prepare($sql);
+            $success = $stmt->execute([
+                ':mid' => $memberid,
+                ':tid' => $temple_id,
+                ':desc' => $custom_desc
+            ]);
+        }
 
         if ($success) {
             $this->notifyUser($memberid, $temple_id);
@@ -143,6 +182,8 @@ class SacredTempleController extends Manager
         $response->getBody()->write(json_encode(['activity' => $success ? 'success' : 'fail']));
         return $response->withHeader('Content-Type', 'application/json');
     }
+
+
 
     private function notifyUser($memberid, $temple_id)
     {
@@ -158,9 +199,21 @@ class SacredTempleController extends Manager
             $temple = $stmt->fetch(PDO::FETCH_OBJ);
             $templeName = $temple ? $temple->temple_name : "วัดศักดิ์สิทธิ์";
 
+            $title = "แนะนำวัดเก่าวัดศักดิ์สิทธิ์";
+            $body = "คุณนินให้ท่านไปสักการะ $templeName เพื่อความเป็นสิริมงคล";
+
+            // Save to Database
+            $nm = new NotificationManager($this->container);
+            $nm->saveNotification(
+                $memberid,
+                'temple_assign',
+                $title,
+                $body,
+                '', // URL
+                "Temple ID: $temple_id"
+            );
+
             if ($user && !empty($user->fcm_token)) {
-                $title = "แนะนำวัดเก่าวัดศักดิ์สิทธิ์";
-                $body = "คุณนินให้ท่านไปสักการะ $templeName เพื่อความเป็นสิริมงคล";
 
                 // FCM Logic (Simplified Reuse)
                 $serviceAccountPath = __DIR__ . '/../../configs/service-account.json';
@@ -181,10 +234,6 @@ class SacredTempleController extends Manager
                         'data' => [
                             'type' => 'temple_assign',
                             'memberid' => (string) $memberid,
-                            'title' => $title,
-                            'body' => $body
-                        ],
-                        'notification' => [
                             'title' => $title,
                             'body' => $body
                         ]
@@ -246,10 +295,6 @@ class SacredTempleController extends Manager
                                     'body' => $msgBody,
                                     'url' => $url,
                                     'memberid' => (string) $memberid
-                                ],
-                                'notification' => [
-                                    'title' => $title,
-                                    'body' => $msgBody
                                 ]
                             ]
                         ];
@@ -286,10 +331,10 @@ class SacredTempleController extends Manager
                 WHERE a.memberid = :mid";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':mid' => $memberid]);
-        $item = $stmt->fetch(PDO::FETCH_OBJ);
+        $items = $stmt->fetchAll(PDO::FETCH_OBJ);
 
         // 2. If not assigned, get latest
-        if (!$item) {
+        if (empty($items)) {
             $item = new \stdClass();
             $item->id = 0;
             $item->temple_name = "ยังไม่มีวัดแนะนำ";
@@ -298,22 +343,42 @@ class SacredTempleController extends Manager
             $item->address = "";
             $item->assign_desc = "";
             $item->is_default = true;
+            $items[] = $item;
         }
 
-        $response->getBody()->write(json_encode($item));
+        $response->getBody()->write(json_encode($items));
         return $response->withHeader('Content-Type', 'application/json');
     }
 
     private function ensureAssignTable()
     {
         $sql = "CREATE TABLE IF NOT EXISTS user_temple_assign (
+            id INT AUTO_INCREMENT PRIMARY KEY,
             memberid VARCHAR(50) NOT NULL,
             temple_id INT NOT NULL,
             custom_description TEXT,
             assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (memberid),
+            KEY (memberid),
             FOREIGN KEY (temple_id) REFERENCES sacred_temple_tb(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
         $this->db->exec($sql);
+    }
+    public function deleteAssignment($request, $response)
+    {
+        $body = $request->getParsedBody();
+        $memberid = $body['memberid'] ?? null;
+        $temple_id = $body['temple_id'] ?? null;
+
+        if (!$memberid || !$temple_id) {
+            $response->getBody()->write(json_encode(['status' => 'fail', 'message' => 'Missing parameters']));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+
+        $sql = "DELETE FROM user_temple_assign WHERE memberid = :mid AND temple_id = :tid";
+        $stmt = $this->db->prepare($sql);
+        $success = $stmt->execute(['mid' => $memberid, 'tid' => $temple_id]);
+
+        $response->getBody()->write(json_encode(['status' => $success ? 'success' : 'fail']));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 }

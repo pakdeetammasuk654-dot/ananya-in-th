@@ -28,7 +28,13 @@ if (session_status() == PHP_SESSION_NONE) {
 file_put_contents(__DIR__ . '/session_debug.log', date('[Y-m-d H:i:s] ') . "[SESSION] URI: " . $_SERVER['REQUEST_URI'] . " | SID: " . session_id() . " | User SET: " . (isset($_SESSION['user']) ? (is_object($_SESSION['user']) ? $_SESSION['user']->username : 'ARRAY') : 'NO') . "\n", FILE_APPEND);
 
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
-ini_set('display_errors', 'On');
+ini_set('display_errors', 'Off');
+
+// Request Debugger - Log every hit to the server
+$requestLog = __DIR__ . '/cache/requests.log';
+$rawBody = file_get_contents('php://input');
+$logEntry = date('[Y-m-d H:i:s] ') . $_SERVER['REQUEST_METHOD'] . " " . $_SERVER['REQUEST_URI'] . " from " . $_SERVER['REMOTE_ADDR'] . "\nBody: " . $rawBody . "\n";
+@file_put_contents($requestLog, $logEntry, FILE_APPEND);
 
 use DI\Container;
 use Slim\Factory\AppFactory;
@@ -52,6 +58,7 @@ $container->set('db', function () use ($config) {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     $pdo->exec("set names utf8mb4");
+    $pdo->exec("SET time_zone = '+07:00'");
     return $pdo;
 });
 
@@ -62,7 +69,17 @@ $container->set('view', function () {
 
 // Set container to AppFactory
 AppFactory::setContainer($container);
+// Create App
 $app = AppFactory::create();
+
+// Add Base Path Detection
+$basePath = (function () {
+    $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+    if ($scriptDir === '/')
+        return '';
+    return $scriptDir;
+})();
+$app->setBasePath($basePath);
 
 // Add Body Parsing Middleware
 $app->addBodyParsingMiddleware();

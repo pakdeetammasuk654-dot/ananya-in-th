@@ -4,181 +4,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bag Color Management - Admin</title>
+    <title>Bag Colors Management - Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: 'Kanit', sans-serif;
             background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
         }
 
         .container {
-            max-width: 1280px;
+            max-width: 60rem;
             margin: 0 auto;
-            padding: 0 1rem;
+            padding: 2rem 1rem;
         }
 
-        /* Navbar */
-        nav {
-            background-color: white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .nav-container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
-
-        .nav-flex {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-logo {
-            display: flex;
-            align-items: center;
-            padding: 1rem 0.5rem;
-            text-decoration: none;
-        }
-
-        .nav-logo img {
-            height: 2rem;
-            width: 2rem;
-            margin-right: 0.5rem;
-        }
-
-        .nav-logo span {
-            font-weight: 600;
-            color: #6b7280;
-            font-size: 1.125rem;
-        }
-
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .nav-link {
-            padding: 0.5rem;
-            font-weight: 500;
-            color: #6b7280;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .nav-link:hover {
-            color: #10b981;
-        }
-
-        .nav-link.active {
-            color: #10b981;
-            border-bottom: 4px solid #10b981;
-        }
-
-        .nav-link.logout {
-            color: white;
-            background-color: #ef4444;
-            border-radius: 0.25rem;
-            padding: 0.5rem;
-        }
-
-        .nav-link.logout:hover {
-            background-color: #f87171;
-        }
-
-        /* Main Content */
-        .py-8 {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
-
-        h1 {
-            font-size: 1.875rem;
-            font-weight: bold;
-            margin-bottom: 1.5rem;
-        }
-
-        h2 {
-            font-size: 1.25rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: #374151;
-        }
-
-        /* Card */
         .card {
             background-color: white;
-            padding: 1.5rem;
             border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
             margin-bottom: 1.5rem;
         }
 
-        /* Search Form */
-        .search-form {
+        .search-box {
             display: flex;
             gap: 1rem;
+            margin-bottom: 2rem;
         }
 
-        .search-input {
+        input[type="text"] {
             flex: 1;
-            padding: 0.5rem;
+            padding: 0.5rem 1rem;
             border: 1px solid #d1d5db;
             border-radius: 0.25rem;
         }
 
-        .search-input:focus {
-            outline: none;
-            border-color: #10b981;
-        }
-
         .btn {
-            padding: 0.5rem 1.5rem;
+            padding: 0.5rem 1rem;
             border-radius: 0.25rem;
             font-weight: 500;
             cursor: pointer;
             border: none;
-            transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
 
-        .btn-green {
-            background-color: #059669;
-            color: white;
-        }
-
-        .btn-green:hover {
-            background-color: #047857;
-        }
-
-        .btn-blue {
+        .btn-primary {
             background-color: #3b82f6;
             color: white;
-            font-size: 0.75rem;
-            padding: 0.25rem 0.75rem;
-            display: inline-block;
-            text-decoration: none;
         }
 
-        .btn-blue:hover {
-            background-color: #2563eb;
-        }
-
-        /* Table */
-        .table-container {
-            background-color: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+        .btn-success {
+            background-color: #10b981;
+            color: white;
         }
 
         table {
@@ -186,122 +66,82 @@
             border-collapse: collapse;
         }
 
-        thead {
-            background-color: #f3f4f6;
-        }
-
         th {
-            padding: 0.75rem 1.25rem;
-            border-bottom: 2px solid #e5e7eb;
             text-align: left;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #4b5563;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            background-color: #f9fafb;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         td {
-            padding: 1.25rem;
+            padding: 1rem;
             border-bottom: 1px solid #e5e7eb;
-            background-color: white;
-            font-size: 0.875rem;
         }
 
-        td.name {
-            color: #111827;
-            font-weight: 500;
-        }
-
-        .text-center {
-            text-align: center;
-            padding: 2.5rem;
-            color: #6b7280;
-        }
-
-        @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
+        .badge {
+            background-color: #e5e7eb;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
         }
     </style>
 </head>
 
 <body>
-
-    <!-- Navbar -->
-    <nav>
-        <div class="nav-container">
-            <div class="nav-flex">
-                <a href="/web/dashboard" class="nav-logo">
-                    <i class="fa-solid fa-clover" style="color: #10b981; font-size: 2rem; margin-right: 0.5rem;"></i>
-                    <span>Admin Panel</span>
-                </a>
-                <div class="nav-links">
-                    <a href="/web/admin/users" class="nav-link">Users</a>
-                    <a href="/web/admin/bag-colors" class="nav-link active">Bag Colors</a>
-                    <a href="/web/admin/articles" class="nav-link">Articles</a>
-                    <a href="/web/logout" class="nav-link logout">Log Out</a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container py-8">
-        <h1>จัดการสีกระเป๋ามงคล (Bag Color Management)</h1>
-        <?php include 'web_admin_toolbar.php'; ?>
-
-        <!-- Search Form -->
+    <?php include 'web_menu.php'; ?>
+    <div class="container">
         <div class="card">
-            <form action="/web/admin/bag-colors" method="GET" class="search-form">
-                <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>"
-                    placeholder="ค้นหาด้วย ชื่อ, Username, หรือ User ID..." class="search-input">
-                <button type="submit" class="btn btn-green">ค้นหา</button>
+            <h1>จัดการสีกระเป๋า (Manage Bag Colors)</h1>
+            <form action="/web/admin/bag-colors" method="GET" class="search-box">
+                <input type="text" name="search" placeholder="ค้นหาชื่อ, นามสกุล, หรือ ID..."
+                    value="<?= htmlspecialchars($search ?? '') ?>">
+                <button type="submit" class="btn btn-primary">ค้นหา</button>
             </form>
-        </div>
 
-        <!-- Result Table -->
-        <h2>
-            <?= !empty($search) ? "ผลการค้นหา: " . htmlspecialchars($search) : "รายชื่อผู้ใช้งานล่าสุด (50 รายการ)" ?>
-        </h2>
-        <?php if (!empty($users)): ?>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Username</th>
-                            <th>Name</th>
-                            <th>Birthday</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($users as $u): ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>ชื่อ-นามสกุล</th>
+                        <th>วันเกิด</th>
+                        <th>FCM Token</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($users)): ?>
+                        <?php foreach ($users as $user): ?>
                             <tr>
-                                <td><?= $u->memberid ?></td>
-                                <td><?= htmlspecialchars($u->username) ?></td>
-                                <td class="name">
-                                    <?= htmlspecialchars($u->realname) ?>
-                                    <?= htmlspecialchars($u->surname ?? '') ?>
-                                </td>
-                                <td><?= htmlspecialchars($u->birthday ?? '-') ?></td>
+                                <td><span class="badge"><?= $user->memberid ?></span></td>
                                 <td>
-                                    <a href="/web/admin/bag-colors/edit/<?= $u->memberid ?>" class="btn-blue">Manage Colors</a>
+                                    <strong><?= htmlspecialchars($user->realname . ' ' . $user->surname) ?></strong>
+                                    <div style="font-size: 0.8rem; color: #6b7280;"><?= htmlspecialchars($user->username) ?>
+                                    </div>
+                                </td>
+                                <td><?= htmlspecialchars($user->birthday ?: '-') ?></td>
+                                <td>
+                                    <?php if (!empty($user->fcm_token)): ?>
+                                        <span class="badge" style="background-color: #d1fae5; color: #065f46;">Token OK</span>
+                                    <?php else: ?>
+                                        <span class="badge" style="background-color: #fee2e2; color: #991b1b;">No Token</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a href="/web/admin/bag-colors/edit/<?= $user->memberid ?>" class="btn btn-success">
+                                        จัดการสี
+                                    </a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php elseif (isset($_GET['search'])): ?>
-            <div class="text-center">ไม่พบ User ที่ค้นหา</div>
-        <?php else: ?>
-            <div class="text-center">กรุณาค้นหา User เพื่อจัดการสีกระเป๋า</div>
-        <?php endif; ?>
-
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #6b7280;">ไม่พบข้อมูลสมาชิก</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
-
 </body>
 
 </html>

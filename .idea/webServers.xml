@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="af81084e-bcd5-4a41-a63f-3672a73a0de2" name="ananya.in.th" url="http://www.ananya.in.th">
+        <fileTransfer rootFolder="/domains/ananya.in.th" host="www.ananya.in.th" port="21">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

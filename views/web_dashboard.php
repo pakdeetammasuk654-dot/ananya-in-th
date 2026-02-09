@@ -314,6 +314,9 @@
                                 <a href="/web/admin/spells" class="admin-btn">
                                     คาถาและคำเตือนพิเศษ ✨
                                 </a>
+                                <a href="/web/admin/inauspicious" class="admin-btn">
+                                    วันอัปมงคล (Inauspicious) 👿
+                                </a>
                                 <a href="/web/admin/api-doc/news" class="admin-btn"
                                     style="border-color:#17a2b8; color:#17a2b8;">
                                     API Doc (News) 📄

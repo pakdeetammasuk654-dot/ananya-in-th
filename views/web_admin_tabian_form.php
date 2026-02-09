@@ -85,7 +85,12 @@
             <?php echo isset($tabian) ? 'แก้ไขป้ายทะเบียน' : 'เพิ่มป้ายทะเบียนใหม่'; ?>
         </h1>
 
-        <form method="POST" action="">
+        <?php
+        $actionUrl = isset($tabian)
+            ? '/web/admin/tabians/update/' . $tabian->tabian_id
+            : '/web/admin/tabians/store';
+        ?>
+        <form method="POST" action="<?php echo $actionUrl; ?>">
             <div class="form-group">
                 <label>เลขทะเบียน (เช่น กข 1234)</label>
                 <input type="text" name="tabian_number"
@@ -128,8 +133,15 @@
             <div class="form-group">
                 <label>แท็ก (เช่น VIP, ลดราคา)</label>
                 <input type="text" name="tabian_tag"
-                    value="<?php echo isset($tabian) ? htmlspecialchars($tabian->tabian_tag) : ''; ?>"
+                    value="<?php echo isset($tabian) ? htmlspecialchars($tabian->tabian_tag ?? '') : ''; ?>"
                     placeholder="เช่น VIP">
+            </div>
+
+            <div class="form-group">
+                <label>ลำดับการแสดงผล (ตัวเลขน้อยขึ้นก่อน)</label>
+                <input type="number" name="order_no"
+                    value="<?php echo isset($tabian) ? htmlspecialchars($tabian->order_no ?? '0') : '0'; ?>"
+                    placeholder="0">
             </div>
 
             <div class="btn-row">

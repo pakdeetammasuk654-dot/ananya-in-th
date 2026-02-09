@@ -2384,7 +2384,7 @@ class TabianController extends Manager
 
     public function listTabianSell($request, $response)
     {
-        $sql = "SELECT * FROM tabian_sell WHERE tabian_status = 'available' ORDER BY tabian_id DESC";
+        $sql = "SELECT * FROM tabian_sell WHERE tabian_status = 'available' ORDER BY order_no ASC, tabian_id DESC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         $data = $stmt->fetchAll(\PDO::FETCH_OBJ);
