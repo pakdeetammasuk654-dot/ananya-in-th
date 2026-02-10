@@ -38,20 +38,38 @@ class UserController extends Manager
 
     public function dressColor($request, $response)
     {
-        $numbDays = null;
-        $strColor = array();
+        // ⚡ Bolt: Optimized to fix N+1 query problem.
+        // The original code iterated through each day and performed a separate database query for each,
+        // leading to slow performance when many days were requested.
+        // This optimized version fetches all required colors in a single query using WHERE IN,
+        // reducing database load and speeding up the response time significantly.
         $dayListStr = $request->getAttribute('days');
-        $numbDays = $dayListStr;
+        $strColor = array();
 
-        for ($i = 0; $i < strlen($numbDays); $i++) {
-            $char = $numbDays[$i];
-            $sql = "SELECT * FROM colortb WHERE colorid = '$char'";
-            $result = $this->db->prepare($sql);
-            if ($result) {
-                $result->execute();
-                $rows = $result->fetch(\PDO::FETCH_ASSOC);
-                if (is_array($rows)) {
-                    array_push($strColor, $rows);
+        if (!empty($dayListStr)) {
+            // Get unique day IDs to avoid duplicate queries
+            $uniqueDays = array_unique(str_split($dayListStr));
+
+            if (!empty($uniqueDays)) {
+                // Create placeholders for the prepared statement
+                $placeholders = implode(',', array_fill(0, count($uniqueDays), '?'));
+                $sql = "SELECT * FROM colortb WHERE colorid IN ($placeholders)";
+
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute(array_values($uniqueDays));
+                $dbColors = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                // Create a map for quick lookups
+                $colorMap = [];
+                foreach ($dbColors as $color) {
+                    $colorMap[$color['colorid']] = $color;
+                }
+
+                // Reconstruct the color list in the original order
+                foreach (str_split($dayListStr) as $day) {
+                    if (isset($colorMap[$day])) {
+                        $strColor[] = $colorMap[$day];
+                    }
                 }
             }
         }
