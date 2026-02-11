@@ -69,6 +69,11 @@
             background-color: #2b8ac4;
         }
 
+        button:focus-visible {
+            outline: 3px solid #77b6e2;
+            outline-offset: 2px;
+        }
+
         .alert {
             padding: 0.75rem;
             border-radius: 4px;
