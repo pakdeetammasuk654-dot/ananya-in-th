@@ -10,6 +10,17 @@ $app->get('/test', function ($request, $response) {
     return $response;
 });
 
+$app->get('/api/opcache/clear', function ($request, $response) {
+    if (function_exists('opcache_reset')) {
+        opcache_reset();
+        $msg = "OPCache reset successfully.";
+    } else {
+        $msg = "OPCache not available.";
+    }
+    $response->getBody()->write($msg);
+    return $response;
+});
+
 $app->get('/migrate-spells-v2', function ($request, $response) use ($container) {
     try {
         $db = $container->get('db');
@@ -226,6 +237,43 @@ $app->post('/member/update', \App\Managers\UserController::class . ':memberUpdat
 $app->post('/member/vipcode', \App\Managers\UserController::class . ':userAddVipCode');
 $app->get('/vipcode/{vipcode}', \App\Managers\UserController::class . ':vipCode');
 
+// Guest routes
+$app->post('/guest/register', function($request, $response) {
+    $controller = new \App\Managers\GuestController($this);
+    return $controller->registerGuest($request, $response);
+});
+
+$app->post('/guest/save-address', function($request, $response) {
+    $controller = new \App\Managers\GuestController($this);
+    return $controller->saveGuestAddress($request, $response);
+});
+
+$app->post('/guest/save-order', function($request, $response) {
+    $controller = new \App\Managers\GuestController($this);
+    return $controller->saveGuestOrder($request, $response);
+});
+
+// --- Admin Guest Address Management ---
+$app->get('/admin/guest-addresses', function($request, $response) {
+    $controller = new \App\Controllers\GuestAddressController($this);
+    return $controller->getAllGuestAddresses($request, $response);
+});
+
+$app->get('/admin/guest-addresses/{guestId}', function($request, $response, $args) {
+    $controller = new \App\Controllers\GuestAddressController($this);
+    return $controller->getGuestAddressById($request, $response, $args['guestId']);
+});
+
+$app->get('/admin/guest-addresses/search/{searchTerm}', function($request, $response, $args) {
+    $controller = new \App\Controllers\GuestAddressController($this);
+    return $controller->searchGuestAddresses($request, $response, $args['searchTerm']);
+});
+
+$app->get('/admin/guest-addresses/stats', function($request, $response) {
+    $controller = new \App\Controllers\GuestAddressController($this);
+    return $controller->getGuestAddressStats($request, $response);
+});
+
 // --- Bag Color & Dress Color & Fortune (Person Section) ---
 $app->get('/member/bagcolor/{memberid}/{age1}/{age2}', \App\Managers\UserController::class . ':bagColor');
 $app->get('/member/dresscolor/{days}', \App\Managers\UserController::class . ':dressColor');
@@ -371,6 +419,7 @@ $app->post('/admin/notifications/custom/send', \App\Managers\NotificationControl
 $app->get('/admin/notifications/send-bag-colors', \App\Managers\NotificationController::class . ':sendBagColors');
 $app->get('/web/admin/notifications/send-bag-colors', \App\Managers\NotificationController::class . ':sendBagColors');
 $app->get('/cron/cleanup-assignments', \App\Managers\NotificationController::class . ':cronCleanupExpiredAssignments');
+$app->get('/cron/wanpra', \App\Managers\NotificationController::class . ':cronWanPra');
 
 $app->get('/debug/force-cleanup', function ($request, $response) use ($container) {
     try {

@@ -68,6 +68,11 @@ class UserController extends Manager
 
     public function lengyamList($request, $response)
     {
+        // Disable output buffering to prevent truncation
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
         if (session_status() == PHP_SESSION_ACTIVE)
             session_write_close();
         $WanSpecial = null;
@@ -76,7 +81,8 @@ class UserController extends Manager
         // Fix Timezone for Thailand
         date_default_timezone_set('Asia/Bangkok');
         $presentDay = date('Y-m-d');
-        $endDate = date('Y-m-d', strtotime('+2 month'));
+        // Increased from 6 to 12 months now that we have efficient filtering
+        $endDate = date('Y-m-d', strtotime('+12 months'));
 
         // Use Pre-calculated DB for today's status (O(1) speed)
         $pdo = $this->db;
@@ -106,14 +112,31 @@ class UserController extends Manager
         $dbSpecial = $result->fetch(\PDO::FETCH_OBJ);
 
         $wanKating = "0";
-        $wanDesc = ($wanPraStr == "1") ? "วันนี้วันพระ" : "";
+        $descParts = [];
+        if ($wanPraStr == "1")
+            $descParts[] = "วันพระ";
+        if ($wanTongchai == "1")
+            $descParts[] = "วันธงชัย";
+        if ($wanAtipbadee == "1")
+            $descParts[] = "วันอธิบดี";
+
+        $wanDesc = !empty($descParts) ? "วันนี้" . implode(", ", $descParts) : "";
         $wanDetail = "";
         $dayId = "1";
 
         if (is_object($dbSpecial)) {
             $dayId = $dbSpecial->dayid ?? "1";
-            if (!empty($dbSpecial->wan_desc))
-                $wanDesc = $dbSpecial->wan_desc;
+            // Append special description if it exists and isn't already there
+            if (!empty($dbSpecial->wan_desc)) {
+                $cleanSpecialDesc = str_replace("วันนี้", "", $dbSpecial->wan_desc);
+                if (!empty($cleanSpecialDesc) && !in_array($cleanSpecialDesc, $descParts)) {
+                    if (empty($wanDesc)) {
+                        $wanDesc = "วันนี้" . $cleanSpecialDesc;
+                    } else {
+                        $wanDesc .= ", " . $cleanSpecialDesc;
+                    }
+                }
+            }
             if (!empty($dbSpecial->wan_detail))
                 $wanDetail = $dbSpecial->wan_detail;
             if (!empty($dbSpecial->wan_kating))
@@ -138,11 +161,37 @@ class UserController extends Manager
         $arrWanpras = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         // Map types to match expected helper format if necessary
-        foreach ($arrWanpras as &$wp) {
-            $wp['is_wanpra'] = (bool) $wp['is_wanpra'];
-            $wp['is_tongchai'] = (bool) $wp['is_tongchai'];
-            $wp['is_atipbadee'] = (bool) $wp['is_atipbadee'];
+        // OPTIMIZATION: Convert to compact format to reduce response size
+        // Efficiently fetch Kating days in bulk
+        $stmtKating = $pdo->prepare("SELECT wan_date FROM dayspecialtb WHERE wan_kating = '1' AND wan_date >= ? AND wan_date <= ?");
+        $stmtKating->execute([$presentDay, $endDate]);
+        $katingDays = $stmtKating->fetchAll(\PDO::FETCH_COLUMN);
+        // Create a lookup map for faster access
+        $katingMap = array_flip($katingDays);
+
+        $filteredWanpras = [];
+        foreach ($arrWanpras as $key => $wp) {
+            $isWanpra = ($wp['is_wanpra'] == 1 || $wp['is_wanpra'] == '1');
+            $isTongchai = ($wp['is_tongchai'] == 1 || $wp['is_tongchai'] == '1');
+            $isAtipbadee = ($wp['is_atipbadee'] == 1 || $wp['is_atipbadee'] == '1');
+
+            // Check if this date is a Kating day using the map
+            $isKating = isset($katingMap[$wp['wanpra_date']]);
+
+            // CRITICAL FIX: Only send items with at least one flag = true
+            // This reduces 332 items to ~113 items to bypass web server buffer limit
+            if ($isWanpra || $isTongchai || $isAtipbadee || $isKating) {
+                $filteredWanpras[] = [
+                    'wanpra_date' => $wp['wanpra_date'],
+                    'is_wanpra' => $isWanpra ? "1" : "0",
+                    'is_tongchai' => $isTongchai ? "1" : "0",
+                    'is_atipbadee' => $isAtipbadee ? "1" : "0",
+                    'is_kating' => $isKating ? "1" : "0"
+                ];
+            }
         }
+
+        $arrWanpras = $filteredWanpras;
 
 
         // Efficiently find the next wanpra once, instead of in a loop
@@ -154,8 +203,23 @@ class UserController extends Manager
             $objWanprasx = null;
         }
 
-        $response->getBody()->write(json_encode(array("leng_yam" => $WanSpecial, "next_wanpra" => $nextWanpra, "wan_pras" => $objWanprasx)));
-        return $response->withHeader('Content-Type', 'application/json');
+        // Create final response
+        $data = array("leng_yam" => $WanSpecial, "next_wanpra" => $nextWanpra, "wan_pras" => $objWanprasx);
+        $jsonResponse = json_encode($data, JSON_UNESCAPED_UNICODE);
+
+        // Log response size for debugging
+        error_log("lengyamList response size: " . strlen($jsonResponse) . " bytes");
+
+        // Send headers
+        header('Content-Type: application/json');
+        header('Content-Length: ' . strlen($jsonResponse));
+        header('Connection: close');
+
+        // Send data
+        echo $jsonResponse;
+
+        // Return response object
+        return $response;
     }
 
     private function nextWanpra(string $strWanpra, array $wanpraList): string
@@ -753,11 +817,12 @@ class UserController extends Manager
         error_reporting(0);
 
         try {
+            $logFile = __DIR__ . '/../../public/fcm_debug.txt';
             $rawInput = file_get_contents('php://input');
-            file_put_contents('/home/tayap/ananya-php/public/fcm_debug.txt', date("Y-m-d H:i:s") . " RAW INPUT: " . substr($rawInput, 0, 500) . "\n", FILE_APPEND);
+            file_put_contents($logFile, date("Y-m-d H:i:s") . " RAW INPUT: " . substr($rawInput, 0, 500) . "\n", FILE_APPEND);
 
             $body = $request->getParsedBody();
-            file_put_contents('/home/tayap/ananya-php/public/fcm_debug.txt', date("Y-m-d H:i:s") . " PARSED BODY: " . print_r($body, true) . "\n", FILE_APPEND);
+            file_put_contents($logFile, date("Y-m-d H:i:s") . " PARSED BODY: " . print_r($body, true) . "\n", FILE_APPEND);
 
             // Fallback for empty body parsing
             if (!$body) {
@@ -765,11 +830,14 @@ class UserController extends Manager
                 $body = json_decode($input, true);
             }
 
-            // Avoid FILTER_SANITIZE_STRING as it is deprecated in PHP 8.1+
-            $memberid = isset($body['memberid']) ? trim($body['memberid']) : '';
-            $token = isset($body['token']) ? trim($body['token']) : '';
+            // Handle various field names from different app versions
+            $memberid = $body['memberid'] ?? $body['userId'] ?? $body['user_id'] ?? '';
+            $token = $body['token'] ?? $body['fcm_token'] ?? $body['fcmToken'] ?? '';
 
-            file_put_contents('/home/tayap/ananya-php/public/fcm_debug.txt', date("Y-m-d H:i:s") . " MEMBERID: $memberid, TOKEN: " . substr($token, 0, 20) . "...\n", FILE_APPEND);
+            $memberid = trim((string) $memberid);
+            $token = trim((string) $token);
+
+            file_put_contents($logFile, date("Y-m-d H:i:s") . " MEMBERID: $memberid, TOKEN: " . substr($token, 0, 20) . "...\n", FILE_APPEND);
 
             if (!empty($memberid)) {
                 $sql = "UPDATE membertb SET fcm_token = :token WHERE memberid = :mid";
@@ -779,15 +847,15 @@ class UserController extends Manager
                 $tokenVal = !empty($token) ? $token : null;
 
                 $res = $stmt->execute([':token' => $tokenVal, ':mid' => $memberid]);
-                file_put_contents('/home/tayap/ananya-php/public/fcm_debug.txt', date("Y-m-d H:i:s") . " SQL EXEC Result: " . ($res ? "OK" : "FAIL") . " | RowCount: " . $stmt->rowCount() . "\n", FILE_APPEND);
+                file_put_contents($logFile, date("Y-m-d H:i:s") . " SQL EXEC Result: " . ($res ? "OK" : "FAIL") . " | RowCount: " . $stmt->rowCount() . "\n", FILE_APPEND);
 
                 if ($res) {
-                    $response->getBody()->write(json_encode(['status' => 'success']));
+                    $response->getBody()->write(json_encode(['status' => 'success', 'updated_id' => $memberid]));
                 } else {
                     $response->getBody()->write(json_encode(['status' => 'fail', 'message' => 'database error']));
                 }
             } else {
-                $response->getBody()->write(json_encode(['status' => 'fail', 'message' => 'missing memberid']));
+                $response->getBody()->write(json_encode(['status' => 'fail', 'message' => 'missing memberid', 'received' => $body]));
             }
         } catch (\Throwable $e) {
             $response->getBody()->write(json_encode(['status' => 'error', 'message' => $e->getMessage()]));

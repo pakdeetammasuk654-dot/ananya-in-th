@@ -81,8 +81,8 @@ class UserController extends Manager
         // Fix Timezone for Thailand
         date_default_timezone_set('Asia/Bangkok');
         $presentDay = date('Y-m-d');
-        // Increased from 6 to 12 months now that we have efficient filtering
-        $endDate = date('Y-m-d', strtotime('+12 months'));
+        // CRITICAL FIX: Reduce from 1 year to 6 months to bypass web server buffer limit
+        $endDate = date('Y-m-d', strtotime('+6 months'));
 
         // Use Pre-calculated DB for today's status (O(1) speed)
         $pdo = $this->db;
@@ -112,31 +112,14 @@ class UserController extends Manager
         $dbSpecial = $result->fetch(\PDO::FETCH_OBJ);
 
         $wanKating = "0";
-        $descParts = [];
-        if ($wanPraStr == "1")
-            $descParts[] = "วันพระ";
-        if ($wanTongchai == "1")
-            $descParts[] = "วันธงชัย";
-        if ($wanAtipbadee == "1")
-            $descParts[] = "วันอธิบดี";
-
-        $wanDesc = !empty($descParts) ? "วันนี้" . implode(", ", $descParts) : "";
+        $wanDesc = ($wanPraStr == "1") ? "วันนี้วันพระ" : "";
         $wanDetail = "";
         $dayId = "1";
 
         if (is_object($dbSpecial)) {
             $dayId = $dbSpecial->dayid ?? "1";
-            // Append special description if it exists and isn't already there
-            if (!empty($dbSpecial->wan_desc)) {
-                $cleanSpecialDesc = str_replace("วันนี้", "", $dbSpecial->wan_desc);
-                if (!empty($cleanSpecialDesc) && !in_array($cleanSpecialDesc, $descParts)) {
-                    if (empty($wanDesc)) {
-                        $wanDesc = "วันนี้" . $cleanSpecialDesc;
-                    } else {
-                        $wanDesc .= ", " . $cleanSpecialDesc;
-                    }
-                }
-            }
+            if (!empty($dbSpecial->wan_desc))
+                $wanDesc = $dbSpecial->wan_desc;
             if (!empty($dbSpecial->wan_detail))
                 $wanDetail = $dbSpecial->wan_detail;
             if (!empty($dbSpecial->wan_kating))
@@ -450,18 +433,13 @@ class UserController extends Manager
         $sday = filter_var($body['sday'] ?? '', FILTER_SANITIZE_STRING);
         $smonth = filter_var($body['smonth'] ?? '', FILTER_SANITIZE_STRING);
         $syear = filter_var($body['syear'] ?? '', FILTER_SANITIZE_STRING);
-        $shour = filter_var($body['shour'] ?? '0', FILTER_SANITIZE_STRING);
-        $sminute = filter_var($body['sminute'] ?? '0', FILTER_SANITIZE_STRING);
+        $shour = filter_var($body['shour'] ?? '', FILTER_SANITIZE_STRING);
+        $sminute = filter_var($body['sminute'] ?? '', FILTER_SANITIZE_STRING);
         $sprovince = filter_var($body['sprovince'] ?? '', FILTER_SANITIZE_STRING);
         $sgender = filter_var($body['sgender'] ?? '', FILTER_SANITIZE_STRING);
         $avatar = filter_var($body['avatar'] ?? '10', FILTER_SANITIZE_STRING);
         $realname = filter_var($body['realname'] ?? '', FILTER_SANITIZE_STRING);
         $surname = filter_var($body['surname'] ?? '', FILTER_SANITIZE_STRING);
-        $address = filter_var($body['address'] ?? '', FILTER_SANITIZE_STRING);
-
-        // แปลงค่าว่างเป็น 0 สำหรับฟิลด์ตัวเลข
-        $shour = (empty($shour) || !is_numeric($shour)) ? '0' : $shour;
-        $sminute = (empty($sminute) || !is_numeric($sminute)) ? '0' : $sminute;
 
         $syear_int = (int) $syear;
         $cYear = ($syear_int > 2400) ? $syear_int - 543 : $syear_int;
@@ -469,30 +447,21 @@ class UserController extends Manager
         $m = (int) $smonth;
         $d = (int) $sday;
 
-        // ตรวจสอบค่าว่างของวันเกิด
-        if (empty($smonth) || empty($sday) || empty($syear) || $syear_int == 0) {
-            $sBirthday = null;
-            $ageyear = 0;
-            $agemonth = 0;
-            $ageweek = 0;
-            $ageday = 0;
-        } else {
-            $sBirthday = sprintf("%04d-%02d-%02d", $cYear, $m, $d);
-            $debugMsg = date("Y-m-d H:i:s") . " | memberUpdate: raw_m=$smonth, raw_d=$sday, raw_y=$syear -> formatted=$sBirthday\n";
-            file_put_contents(__DIR__ . '/../../public/debug_birthday.txt', $debugMsg, FILE_APPEND);
-            error_log("memberUpdate: raw_m=$smonth, raw_d=$sday, raw_y=$syear -> formatted=$sBirthday");
-            $birthdayTs = strtotime($sBirthday);
+        $sBirthday = sprintf("%04d-%02d-%02d", $cYear, $m, $d);
+        $debugMsg = date("Y-m-d H:i:s") . " | memberUpdate: raw_m=$smonth, raw_d=$sday, raw_y=$syear -> formatted=$sBirthday\n";
+        file_put_contents(__DIR__ . '/../../public/debug_birthday.txt', $debugMsg, FILE_APPEND);
+        error_log("memberUpdate: raw_m=$smonth, raw_d=$sday, raw_y=$syear -> formatted=$sBirthday");
+        $birthdayTs = strtotime($sBirthday);
 
-            $manager = new PersonManager();
-            $ages = $manager->age($birthdayTs, time());
+        $manager = new PersonManager();
+        $ages = $manager->age($birthdayTs, time());
 
-            $ageyear = $ages['year'] ?? 0;
-            $agemonth = $ages['month'] ?? 0;
-            $ageweek = $ages['week'] ?? 0;
-            $ageday = $ages['day'] ?? 0;
-        }
+        $ageyear = $ages['year'] ?? 0;
+        $agemonth = $ages['month'] ?? 0;
+        $ageweek = $ages['week'] ?? 0;
+        $ageday = $ages['day'] ?? 0;
 
-        $sql = "UPDATE membertb SET realname='{$realname}', surname='{$surname}', birthday=" . ($sBirthday ? "'{$sBirthday}'" : "NULL") . ", shour='{$shour}', sminute='{$sminute}', ageyear='{$ageyear}', agemonth='{$agemonth}', ageweek='{$ageweek}', ageday='{$ageday}', sprovince='{$sprovince}', sgender='{$sgender}', avatar='{$avatar}', address='{$address}' WHERE memberid = '{$memberid}'";
+        $sql = "UPDATE membertb SET realname='{$realname}', surname='{$surname}', birthday='{$sBirthday}', shour='{$shour}', sminute='{$sminute}', ageyear='{$ageyear}', agemonth='{$agemonth}', ageweek='{$ageweek}', ageday='{$ageday}', sprovince='{$sprovince}', sgender='{$sgender}', avatar='{$avatar}' WHERE memberid = '{$memberid}'";
 
         $result = $this->db->prepare($sql);
         if ($result->execute()) {
