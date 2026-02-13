@@ -255,22 +255,22 @@ $app->post('/guest/save-order', function($request, $response) {
 
 // --- Admin Guest Address Management ---
 $app->get('/admin/guest-addresses', function($request, $response) {
-    $controller = new \App\Controllers\GuestAddressController($this);
+    $controller = new \App\Managers\GuestAddressManager($this);
     return $controller->getAllGuestAddresses($request, $response);
 });
 
 $app->get('/admin/guest-addresses/{guestId}', function($request, $response, $args) {
-    $controller = new \App\Controllers\GuestAddressController($this);
+    $controller = new \App\Managers\GuestAddressManager($this);
     return $controller->getGuestAddressById($request, $response, $args['guestId']);
 });
 
 $app->get('/admin/guest-addresses/search/{searchTerm}', function($request, $response, $args) {
-    $controller = new \App\Controllers\GuestAddressController($this);
+    $controller = new \App\Managers\GuestAddressManager($this);
     return $controller->searchGuestAddresses($request, $response, $args['searchTerm']);
 });
 
 $app->get('/admin/guest-addresses/stats', function($request, $response) {
-    $controller = new \App\Controllers\GuestAddressController($this);
+    $controller = new \App\Managers\GuestAddressManager($this);
     return $controller->getGuestAddressStats($request, $response);
 });
 
